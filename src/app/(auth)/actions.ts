@@ -13,10 +13,11 @@ import {
   validateEmployeeNumber,
   validatePassword,
 } from '@/lib/validation';
+import { guard } from '@/lib/errors';
 import type { ActionState } from '@/lib/types';
 
 /* ------------------------------------------------------------------ الدخول */
-export async function loginAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+async function loginActionImpl(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const employeeNumber = String(formData.get('employee_number') ?? '').trim();
   const password = String(formData.get('password') ?? '');
 
@@ -59,7 +60,7 @@ export async function logoutAction() {
 }
 
 /* -------------------------------------------------------- طلب إنشاء حساب */
-export async function registerAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+async function registerActionImpl(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const employeeNumber = String(formData.get('employee_number') ?? '').trim();
   const fullName = String(formData.get('full_name') ?? '').trim().replace(/\s+/g, ' ');
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
@@ -125,7 +126,7 @@ export async function registerAction(_prev: ActionState, formData: FormData): Pr
 }
 
 /* ------------------------------------------- نسيت كلمة المرور — إرسال OTP */
-export async function requestOtpAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+async function requestOtpActionImpl(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const identifier = String(formData.get('identifier') ?? '').trim();
   if (!identifier) return { error: 'أدخل الرقم الوظيفي أو البريد الإلكتروني' };
 
@@ -169,7 +170,7 @@ export async function requestOtpAction(_prev: ActionState, formData: FormData): 
 }
 
 /* ------------------------------------- التحقق من OTP وتعيين كلمة مرور جديدة */
-export async function resetPasswordAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+async function resetPasswordActionImpl(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const identifier = String(formData.get('identifier') ?? '').trim();
   const code = String(formData.get('code') ?? '').trim();
   const password = String(formData.get('password') ?? '');
@@ -225,4 +226,25 @@ export async function resetPasswordAction(_prev: ActionState, formData: FormData
   await logAudit({ actorId: emp.id, actorName: emp.full_name, action: 'password_reset_otp' });
 
   return { ok: true, message: 'تم تعيين كلمة المرور الجديدة بنجاح، يمكنك الآن تسجيل الدخول.' };
+}
+
+
+/* ------------------------------------------------------------------------
+   تغليف الإجراءات: أي خطأ (إعدادات ناقصة، انقطاع اتصال…) يظهر كرسالة
+   عربية داخل النموذج بدل شاشة الخطأ البيضاء.
+------------------------------------------------------------------------ */
+export async function loginAction(prev: ActionState, formData: FormData): Promise<ActionState> {
+  return guard(() => loginActionImpl(prev, formData));
+}
+
+export async function registerAction(prev: ActionState, formData: FormData): Promise<ActionState> {
+  return guard(() => registerActionImpl(prev, formData));
+}
+
+export async function requestOtpAction(prev: ActionState, formData: FormData): Promise<ActionState> {
+  return guard(() => requestOtpActionImpl(prev, formData));
+}
+
+export async function resetPasswordAction(prev: ActionState, formData: FormData): Promise<ActionState> {
+  return guard(() => resetPasswordActionImpl(prev, formData));
 }

@@ -17,6 +17,7 @@ import {
   validateCivilNumber,
   validatePhone,
 } from '@/lib/validation';
+import { guard } from '@/lib/errors';
 import type { ActionState } from '@/lib/types';
 
 /**
@@ -51,7 +52,7 @@ export async function createUploadTicketAction(input: {
 }
 
 /** الخطوة ٢: حفظ الطلب بعد اكتمال رفع المرفقات */
-export async function submitRequest(
+async function submitRequestImpl(
   type: RequestType,
   _prev: ActionState,
   formData: FormData
@@ -161,4 +162,13 @@ export async function submitRequest(
   });
 
   redirect(`/apply/success?no=${encodeURIComponent(requestNumber)}&civil=${encodeURIComponent(civil)}`);
+}
+
+
+export async function submitRequest(
+  type: RequestType,
+  prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  return guard(() => submitRequestImpl(type, prev, formData));
 }

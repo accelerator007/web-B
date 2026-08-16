@@ -13,12 +13,13 @@ import {
   validateEmployeeNumber,
   validatePassword,
 } from '@/lib/validation';
+import { guard } from '@/lib/errors';
 import type { ActionState } from '@/lib/types';
 
 const DEPTS = ['technical', 'health', 'finance', 'investment', 'admin'];
 
 /* ------------------------------------------------ اعتماد / رفض طلب حساب */
-export async function decideAccountAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+async function decideAccountActionImpl(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const admin = await requireAdmin();
   const id = String(formData.get('employee_id') ?? '');
   const decision = String(formData.get('decision') ?? '');
@@ -71,7 +72,7 @@ export async function decideAccountAction(_prev: ActionState, formData: FormData
 }
 
 /* ------------------------------------------------------ إنشاء موظف مباشرة */
-export async function createEmployeeAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+async function createEmployeeActionImpl(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const admin = await requireAdmin();
 
   const employeeNumber = String(formData.get('employee_number') ?? '').trim();
@@ -139,7 +140,7 @@ export async function createEmployeeAction(_prev: ActionState, formData: FormDat
 }
 
 /* --------------------------------------------------- تعديل بيانات الموظف */
-export async function updateEmployeeAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+async function updateEmployeeActionImpl(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const admin = await requireAdmin();
   const id = String(formData.get('employee_id') ?? '');
   const adminPassword = String(formData.get('admin_password') ?? '');
@@ -192,7 +193,7 @@ export async function updateEmployeeAction(_prev: ActionState, formData: FormDat
 }
 
 /* ------------------------------------------------ تغيير كلمة مرور الموظف */
-export async function changeEmployeePasswordAction(
+async function changeEmployeePasswordActionImpl(
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> {
@@ -234,7 +235,7 @@ export async function changeEmployeePasswordAction(
 }
 
 /* --------------------------------------------------------- حذف الموظف */
-export async function deleteEmployeeAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+async function deleteEmployeeActionImpl(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const admin = await requireAdmin();
   const id = String(formData.get('employee_id') ?? '');
   const adminPassword = String(formData.get('admin_password') ?? '');
@@ -266,7 +267,7 @@ export async function deleteEmployeeAction(_prev: ActionState, formData: FormDat
 }
 
 /* --------------------------------------------------------- حذف طلب */
-export async function deleteRequestAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+async function deleteRequestActionImpl(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const admin = await requireAdmin();
   const id = String(formData.get('request_id') ?? '');
   const adminPassword = String(formData.get('admin_password') ?? '');
@@ -303,4 +304,30 @@ export async function deleteRequestAction(_prev: ActionState, formData: FormData
   if (redirectTo) redirect(redirectTo);
 
   return { ok: true, message: `تم حذف الطلب ${request.request_number} ومرفقاته.` };
+}
+
+/* تغليف إجراءات الأدمن برسائل خطأ واضحة */
+
+export async function decideAccountAction(prev: ActionState, formData: FormData): Promise<ActionState> {
+  return guard(() => decideAccountActionImpl(prev, formData));
+}
+
+export async function createEmployeeAction(prev: ActionState, formData: FormData): Promise<ActionState> {
+  return guard(() => createEmployeeActionImpl(prev, formData));
+}
+
+export async function updateEmployeeAction(prev: ActionState, formData: FormData): Promise<ActionState> {
+  return guard(() => updateEmployeeActionImpl(prev, formData));
+}
+
+export async function changeEmployeePasswordAction(prev: ActionState, formData: FormData): Promise<ActionState> {
+  return guard(() => changeEmployeePasswordActionImpl(prev, formData));
+}
+
+export async function deleteEmployeeAction(prev: ActionState, formData: FormData): Promise<ActionState> {
+  return guard(() => deleteEmployeeActionImpl(prev, formData));
+}
+
+export async function deleteRequestAction(prev: ActionState, formData: FormData): Promise<ActionState> {
+  return guard(() => deleteRequestActionImpl(prev, formData));
 }

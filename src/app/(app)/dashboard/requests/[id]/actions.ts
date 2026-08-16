@@ -6,9 +6,10 @@ import { db } from '@/lib/supabase';
 import { applyDecision, canDecide } from '@/lib/workflow';
 import { logAudit } from '@/lib/notify';
 import type { Department } from '@/lib/constants';
+import { guard } from '@/lib/errors';
 import type { ActionState, RequestRow } from '@/lib/types';
 
-export async function decideAction(
+async function decideActionImpl(
   requestId: string,
   _prev: ActionState,
   formData: FormData
@@ -76,4 +77,13 @@ function stageDepartment(r: RequestRow): Department {
   if (r.status === 'pending_finance') return 'finance';
   if (r.status === 'pending_investment') return 'investment';
   return 'technical';
+}
+
+
+export async function decideAction(
+  requestId: string,
+  prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  return guard(() => decideActionImpl(requestId, prev, formData));
 }
