@@ -1,0 +1,17 @@
+# إعدادات النشر على Netlify
+# يعتمد الموقع على Next.js (App Router + Server Actions)، ويشغّلها Netlify
+# عبر إضافة @netlify/plugin-nextjs التي تُثبَّت تلقائياً.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NODE_VERSION = "20"
+  # المتغيّرات التي تبدأ بـ NEXT_PUBLIC_ عامة بطبيعتها وتظهر في ملفات المتصفح،
+  # لذلك نستثنيها من فحص الأسرار حتى لا يفشل البناء.
+  # ملاحظة مهمة: لا تضع SUPABASE_SERVICE_ROLE_KEY هنا أبداً — يبقى سرّياً على الخادم.
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,NEXT_PUBLIC_APP_URL"
