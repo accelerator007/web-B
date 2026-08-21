@@ -92,6 +92,22 @@ export function ApplyForm({
           </div>
 
           <div className="sm:col-span-2">
+            <label className="label" htmlFor="site_location_url">
+              رابط موقع المكان <span className="text-rose-600">*</span>
+            </label>
+            <input
+              id="site_location_url"
+              name="site_location_url"
+              type="url"
+              className="input"
+              dir="ltr"
+              placeholder="https://maps.google.com/..."
+              required
+            />
+            <p className="mt-1.5 text-xs text-slate-500">الصق رابط الموقع من خرائط Google أو أي خدمة خرائط.</p>
+          </div>
+
+          <div className="sm:col-span-2">
             <label className="label" htmlFor="citizen_notes">
               ملاحظات إضافية (اختياري)
             </label>

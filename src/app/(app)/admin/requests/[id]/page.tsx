@@ -12,7 +12,7 @@ import {
 import { DecisionForm } from '@/components/decision-form';
 import { DangerDialog } from '@/components/admin/danger-dialog';
 import { Alert } from '@/components/ui';
-import { decideAction } from '@/app/(app)/dashboard/requests/[id]/actions';
+import { createContractUploadTicketAction, decideAction } from '@/app/(app)/dashboard/requests/[id]/actions';
 import { deleteRequestAction } from '../../actions';
 import type { AttachmentRow, RequestRow, ReviewRow } from '@/lib/types';
 import type { Department } from '@/lib/constants';
@@ -33,6 +33,7 @@ export default async function AdminRequestDetail({ params }: { params: { id: str
 
   const editable = canDecide(admin, request);
   const action = decideAction.bind(null, request.id);
+  const contractTicketAction = createContractUploadTicketAction.bind(null, request.id);
 
   return (
     <div className="space-y-6">
@@ -71,7 +72,7 @@ export default async function AdminRequestDetail({ params }: { params: { id: str
                 بصفتك مدير النظام يمكنك اتخاذ القرار نيابةً عن الجهة المسؤولة عن المرحلة الحالية، وسيُسجَّل
                 باسمك في سجل الإجراءات.
               </Alert>
-              <DecisionForm action={action} actingAs={stageDepartment(request)} isAdmin />
+              <DecisionForm action={action} actingAs={stageDepartment(request)} isAdmin contractTicketAction={contractTicketAction} />
             </>
           ) : (
             <Alert kind="info">

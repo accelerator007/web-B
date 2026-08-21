@@ -60,6 +60,7 @@ async function submitRequestImpl(
   const civil = String(formData.get('civil_number') ?? '').trim();
   const name = String(formData.get('full_name') ?? '').trim().replace(/\s+/g, ' ');
   const phoneRaw = String(formData.get('phone') ?? '');
+  const locationUrl = String(formData.get('site_location_url') ?? '').trim();
   const notes = String(formData.get('citizen_notes') ?? '').trim();
 
   const fields = ATTACHMENTS[type];
@@ -71,6 +72,12 @@ async function submitRequestImpl(
     validatePhone(phoneRaw),
   ].filter(Boolean) as string[];
   if (errors.length) return { error: errors[0] };
+  try {
+    const parsed = new URL(locationUrl);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') throw new Error();
+  } catch {
+    return { error: 'الرجاء إدخال رابط صحيح لموقع المكان' };
+  }
 
   // التحقق من كل مرفق فعلياً في التخزين (لا نثق ببيانات المتصفح)
   const uploads: { fieldKey: string; path: string; fileName: string; size: number; mime: string }[] = [];
@@ -105,6 +112,7 @@ async function submitRequestImpl(
       civil_number: civil,
       full_name: name,
       phone: normalizePhone(phoneRaw),
+      site_location_url: locationUrl,
       citizen_notes: notes || null,
       status: 'pending_departments',
     })

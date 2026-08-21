@@ -21,6 +21,7 @@ export type RequestRow = {
   civil_number: string;
   full_name: string;
   phone: string;
+  site_location_url: string | null;
   citizen_notes: string | null;
   status: RequestStatus;
 

@@ -12,7 +12,7 @@ import {
 } from '@/components/request-detail';
 import { DecisionForm } from '@/components/decision-form';
 import { Alert } from '@/components/ui';
-import { decideAction } from './actions';
+import { createContractUploadTicketAction, decideAction } from './actions';
 import type { AttachmentRow, ReviewRow } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -26,6 +26,7 @@ export default async function RequestDetailPage({ params }: { params: { id: stri
 
   const editable = canDecide(user, request);
   const action = decideAction.bind(null, request.id);
+  const contractTicketAction = createContractUploadTicketAction.bind(null, request.id);
 
   return (
     <div className="space-y-6">
@@ -47,7 +48,7 @@ export default async function RequestDetailPage({ params }: { params: { id: stri
           <DecisionsCard r={request} />
 
           {editable ? (
-            <DecisionForm action={action} actingAs={user.department} />
+            <DecisionForm action={action} actingAs={user.department} contractTicketAction={contractTicketAction} />
           ) : (
             <Alert kind="info">
               {request.status === 'approved'

@@ -70,7 +70,7 @@ export const ATTACHMENTS: Record<RequestType, AttachmentField[]> = {
 
 export const ATTACHMENT_LABELS: Record<string, string> = Object.values(ATTACHMENTS)
   .flat()
-  .reduce((acc, f) => ({ ...acc, [f.key]: f.label }), {} as Record<string, string>);
+  .reduce((acc, f) => ({ ...acc, [f.key]: f.label }), { final_contract: 'العقد المعتمد من دائرة الاستثمار' } as Record<string, string>);
 
 export const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 ميجابايت
 export const ALLOWED_MIME = [
