@@ -7,17 +7,19 @@ export function SubmitButton({
   className = 'btn-primary',
   pendingLabel = 'جارٍ المعالجة…',
   confirm,
+  disabled = false,
 }: {
   children: React.ReactNode;
   className?: string;
   pendingLabel?: string;
   confirm?: string;
+  disabled?: boolean;
 }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={pending || disabled}
       className={className}
       onClick={(e) => {
         if (confirm && !window.confirm(confirm)) e.preventDefault();

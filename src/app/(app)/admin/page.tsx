@@ -179,6 +179,8 @@ function auditLabel(action: string) {
     request_deleted: 'حذف طلب',
     decision_approved: 'موافقة على طلب',
     decision_rejected: 'رفض طلب',
+    attachment_opened: 'فتح مرفق',
+    attachment_downloaded: 'تنزيل مرفق',
   };
   return map[action] ?? action;
 }

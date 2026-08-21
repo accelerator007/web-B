@@ -38,6 +38,24 @@ export function RequestHeader({ r }: { r: RequestRow }) {
         />
       </dl>
 
+      {r.site_location_url && (
+        <div className="mt-5 rounded-xl border border-sky-200 bg-sky-50 p-4">
+          <div className="text-xs font-bold text-sky-700">موقع المكان</div>
+          <a
+            href={r.site_location_url}
+            target="_blank"
+            rel="noreferrer"
+            dir="ltr"
+            className="mt-1 inline-flex break-all text-sm font-semibold text-sky-800 underline decoration-sky-300 underline-offset-4 hover:text-sky-950"
+          >
+            فتح الموقع على الخريطة
+          </a>
+          {r.site_latitude != null && r.site_longitude != null && (
+            <div dir="ltr" className="mt-2 text-xs text-sky-700">{r.site_latitude.toFixed(6)}, {r.site_longitude.toFixed(6)}</div>
+          )}
+        </div>
+      )}
+
       {r.citizen_notes && (
         <div className="mt-5 rounded-xl bg-slate-50 p-4">
           <div className="text-xs font-bold text-slate-500">ملاحظات مقدّم الطلب</div>
@@ -110,6 +128,9 @@ export function AttachmentsCard({ attachments }: { attachments: AttachmentRow[] 
 
             <Link href={`/api/files/${a.id}`} target="_blank" className="btn-ghost !py-2 !text-sm">
               فتح المرفق
+            </Link>
+            <Link href={`/api/files/${a.id}?download=1`} className="btn-ghost !py-2 !text-sm">
+              تنزيل
             </Link>
           </li>
         ))}

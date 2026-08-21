@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
 import { getRequestBundle } from '@/lib/queries';
-import { canDecide } from '@/lib/workflow';
+import { canDecide, canViewRequest } from '@/lib/workflow';
 import { markRequestNotificationsRead } from '@/lib/notifications';
 import {
   AttachmentsCard,
@@ -12,20 +12,23 @@ import {
 } from '@/components/request-detail';
 import { DecisionForm } from '@/components/decision-form';
 import { Alert } from '@/components/ui';
-import { decideAction } from './actions';
+import { createContractUploadTicketAction, decideAction } from './actions';
 import type { AttachmentRow, ReviewRow } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
-export default async function RequestDetailPage({ params }: { params: { id: string } }) {
+export default async function RequestDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
-  const { request, attachments, reviews } = await getRequestBundle(params.id);
+  const { id } = await params;
+  const { request, attachments, reviews } = await getRequestBundle(id);
   if (!request) notFound();
+  if (!canViewRequest(user, request)) notFound();
 
   await markRequestNotificationsRead(user.id, request.id);
 
   const editable = canDecide(user, request);
   const action = decideAction.bind(null, request.id);
+  const contractTicketAction = createContractUploadTicketAction.bind(null, request.id);
 
   return (
     <div className="space-y-6">
@@ -47,7 +50,7 @@ export default async function RequestDetailPage({ params }: { params: { id: stri
           <DecisionsCard r={request} />
 
           {editable ? (
-            <DecisionForm action={action} actingAs={user.department} />
+            <DecisionForm action={action} actingAs={user.department} contractTicketAction={contractTicketAction} />
           ) : (
             <Alert kind="info">
               {request.status === 'approved'

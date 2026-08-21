@@ -38,6 +38,13 @@ export async function searchRequests(
     if (f.nullColumn) q = q.is(f.nullColumn, null);
   }
 
+  // الدوائر اللاحقة لا ترى الطلب قبل وصوله الفعلي إلى مرحلتها.
+  if (opts.department === 'finance') {
+    q = q.or('finance_at.not.is.null,status.in.(pending_finance,pending_investment,approved)');
+  } else if (opts.department === 'investment') {
+    q = q.or('investment_at.not.is.null,status.in.(pending_investment,approved)');
+  }
+
   const { data } = await q;
   return (data ?? []) as RequestRow[];
 }

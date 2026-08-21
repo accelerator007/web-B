@@ -5,9 +5,10 @@ import { RequestsTable } from '@/components/requests-table';
 
 export const dynamic = 'force-dynamic';
 
-export default async function RequestsPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function RequestsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const user = await requireUser();
-  const rows = await searchRequests(searchParams, { department: user.department });
+  const query = await searchParams;
+  const rows = await searchRequests(query, { department: user.department });
 
   return (
     <div className="space-y-6">
@@ -20,7 +21,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Sea
 
       <RequestsFilter
         action="/dashboard/requests"
-        defaults={searchParams}
+        defaults={query}
         showInbox={user.role !== 'admin'}
       />
 

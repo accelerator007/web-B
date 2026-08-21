@@ -42,6 +42,7 @@ create table if not exists public.requests (
   civil_number      text not null,
   full_name         text not null,
   phone             text not null,
+  site_location_url text not null,
   citizen_notes     text,
 
   status            text not null default 'pending_departments'
@@ -90,6 +91,9 @@ create index if not exists requests_civil_idx   on public.requests(civil_number)
 create index if not exists requests_status_idx  on public.requests(status);
 create index if not exists requests_type_idx    on public.requests(type);
 create index if not exists requests_created_idx on public.requests(created_at desc);
+
+-- ترقية آمنة لقواعد البيانات المنشأة قبل إضافة رابط الموقع.
+alter table public.requests add column if not exists site_location_url text;
 
 -- ---------------------------------------------------------------- المرفقات
 create table if not exists public.attachments (

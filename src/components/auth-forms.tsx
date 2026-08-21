@@ -24,6 +24,7 @@ export function LoginForm({ notice }: { notice?: string }) {
       )}
 
       <form action={formAction} className="mt-6 space-y-5">
+        <input name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
         {state?.error && <Alert kind="error">{state.error}</Alert>}
 
         <div>
@@ -86,6 +87,7 @@ export function RegisterForm() {
       </p>
 
       <form action={formAction} className="mt-6 space-y-5">
+        <input name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
         {state?.error && <Alert kind="error">{state.error}</Alert>}
 
         <div>
@@ -227,6 +229,7 @@ export function ForgotPasswordForm() {
 
       {step === 1 ? (
         <form action={sendOtp} className="mt-6 space-y-5">
+          <input name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
           {otpState?.error && <Alert kind="error">{otpState.error}</Alert>}
           {otpState?.ok && <Alert kind="success">{otpState.message}</Alert>}
 

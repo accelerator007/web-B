@@ -47,6 +47,22 @@ export function canDecide(user: SessionUser, r: RequestRow): boolean {
   }
 }
 
+/** يمنع موظفاً من فتح طلب لم يصل إلى دائرته بعد. */
+export function canViewRequest(user: SessionUser, r: RequestRow): boolean {
+  if (user.role === 'admin') return true;
+  switch (user.department) {
+    case 'technical':
+    case 'health':
+      return true;
+    case 'finance':
+      return Boolean(r.finance_at) || ['pending_finance', 'pending_investment', 'approved'].includes(r.status);
+    case 'investment':
+      return Boolean(r.investment_at) || ['pending_investment', 'approved'].includes(r.status);
+    default:
+      return false;
+  }
+}
+
 type DecisionInput = {
   request: RequestRow;
   user: SessionUser;
