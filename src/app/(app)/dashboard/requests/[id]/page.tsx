@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireUser } from '@/lib/auth';
 import { getRequestBundle } from '@/lib/queries';
-import { canDecide } from '@/lib/workflow';
+import { canDecide, canViewRequest } from '@/lib/workflow';
 import { markRequestNotificationsRead } from '@/lib/notifications';
 import {
   AttachmentsCard,
@@ -21,6 +21,7 @@ export default async function RequestDetailPage({ params }: { params: { id: stri
   const user = await requireUser();
   const { request, attachments, reviews } = await getRequestBundle(params.id);
   if (!request) notFound();
+  if (!canViewRequest(user, request)) notFound();
 
   await markRequestNotificationsRead(user.id, request.id);
 

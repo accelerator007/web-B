@@ -73,6 +73,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               <span className="mx-2 my-1 w-px bg-slate-200" />
               <NavLink href="/admin">لوحة الأدمن</NavLink>
               <NavLink href="/admin/requests">إدارة الطلبات</NavLink>
+              <NavLink href="/admin/reports">التقارير والتصدير</NavLink>
               <NavLink href="/admin/employees">الموظفون</NavLink>
               <NavLink href="/admin/employees/requests">طلبات الحسابات</NavLink>
             </>

@@ -2,7 +2,8 @@
 
 import { redirect } from 'next/navigation';
 import { db } from '@/lib/supabase';
-import { createUploadTicket, deleteAttachments, moveAttachment, statObject } from '@/lib/storage';
+import { createUploadTicket, deleteAttachments, inspectObject } from '@/lib/storage';
+import { moveAttachment } from '@/lib/storage';
 import { notifyDepartment } from '@/lib/notify';
 import {
   ALLOWED_MIME,
@@ -19,6 +20,7 @@ import {
 } from '@/lib/validation';
 import { guard } from '@/lib/errors';
 import type { ActionState } from '@/lib/types';
+import { consumeRateLimit, isSpam } from '@/lib/rate-limit';
 
 /**
  * الخطوة ١ من الرفع: المتصفح يطلب رابط رفع موقّعاً لملف واحد.
@@ -31,6 +33,7 @@ export async function createUploadTicketAction(input: {
   mimeType: string;
   size: number;
 }): Promise<{ path?: string; token?: string; error?: string }> {
+  if (!(await consumeRateLimit('upload-ticket', 30, 3600))) return { error: 'طلبات رفع كثيرة، حاول لاحقاً' };
   const fields = ATTACHMENTS[input.type];
   if (!fields?.some((f) => f.key === input.fieldKey)) return { error: 'حقل مرفق غير معروف' };
   if (!ALLOWED_MIME.includes(input.mimeType))
@@ -57,10 +60,13 @@ async function submitRequestImpl(
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> {
+  if (isSpam(formData) || !(await consumeRateLimit('public-application', 5, 3600))) return { error: 'تعذّر تقديم الطلب الآن، حاول لاحقاً' };
   const civil = String(formData.get('civil_number') ?? '').trim();
   const name = String(formData.get('full_name') ?? '').trim().replace(/\s+/g, ' ');
   const phoneRaw = String(formData.get('phone') ?? '');
   const locationUrl = String(formData.get('site_location_url') ?? '').trim();
+  const latitude = Number(formData.get('site_latitude'));
+  const longitude = Number(formData.get('site_longitude'));
   const notes = String(formData.get('citizen_notes') ?? '').trim();
 
   const fields = ATTACHMENTS[type];
@@ -89,11 +95,11 @@ async function submitRequestImpl(
     if (!path) return { error: `${f.label}: المرفق مطلوب` };
     if (!path.startsWith('pending/')) return { error: `${f.label}: مسار المرفق غير صالح` };
 
-    const info = await statObject(path);
+    const info = await inspectObject(path);
     if (!info) return { error: `${f.label}: لم يكتمل رفع الملف، حاول مرة أخرى` };
     if (info.size > MAX_FILE_BYTES) return { error: `${f.label}: حجم الملف يتجاوز ١٠ ميجابايت` };
-    if (info.mime && !ALLOWED_MIME.includes(info.mime))
-      return { error: `${f.label}: صيغة غير مدعومة — يُقبل PDF أو صورة` };
+    if (!info.mime || !ALLOWED_MIME.includes(info.mime))
+      return { error: `${f.label}: محتوى الملف لا يطابق PDF أو صورة مسموحة` };
 
     uploads.push({ fieldKey: f.key, path, fileName, size: info.size, mime: info.mime });
   }
@@ -113,6 +119,8 @@ async function submitRequestImpl(
       full_name: name,
       phone: normalizePhone(phoneRaw),
       site_location_url: locationUrl,
+      site_latitude: Number.isFinite(latitude) && latitude >= -90 && latitude <= 90 ? latitude : null,
+      site_longitude: Number.isFinite(longitude) && longitude >= -180 && longitude <= 180 ? longitude : null,
       citizen_notes: notes || null,
       status: 'pending_departments',
     })

@@ -50,6 +50,9 @@ export function RequestHeader({ r }: { r: RequestRow }) {
           >
             فتح الموقع على الخريطة
           </a>
+          {r.site_latitude != null && r.site_longitude != null && (
+            <div dir="ltr" className="mt-2 text-xs text-sky-700">{r.site_latitude.toFixed(6)}, {r.site_longitude.toFixed(6)}</div>
+          )}
         </div>
       )}
 
@@ -125,6 +128,9 @@ export function AttachmentsCard({ attachments }: { attachments: AttachmentRow[] 
 
             <Link href={`/api/files/${a.id}`} target="_blank" className="btn-ghost !py-2 !text-sm">
               فتح المرفق
+            </Link>
+            <Link href={`/api/files/${a.id}?download=1`} className="btn-ghost !py-2 !text-sm">
+              تنزيل
             </Link>
           </li>
         ))}

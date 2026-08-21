@@ -4,7 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { requireUser } from '@/lib/auth';
 import { db } from '@/lib/supabase';
 import { applyDecision, canDecide } from '@/lib/workflow';
-import { createUploadTicket, deleteAttachments, moveAttachment, statObject } from '@/lib/storage';
+import { createUploadTicket, deleteAttachments, inspectObject, moveAttachment } from '@/lib/storage';
+import { consumeRateLimit } from '@/lib/rate-limit';
 import { logAudit } from '@/lib/notify';
 import { MAX_FILE_BYTES, type Department } from '@/lib/constants';
 import { guard } from '@/lib/errors';
@@ -15,6 +16,7 @@ export async function createContractUploadTicketAction(
   input: { fileName: string; mimeType: string; size: number }
 ): Promise<{ path?: string; token?: string; error?: string }> {
   const user = await requireUser();
+  if (!(await consumeRateLimit('contract-upload', 20, 3600))) return { error: 'طلبات رفع كثيرة، حاول لاحقاً' };
   const { data } = await db().from('requests').select('*').eq('id', requestId).maybeSingle();
   const request = data as RequestRow | null;
   if (!request || !canDecide(user, request)) return { error: 'لا يمكنك رفع عقد لهذا الطلب' };
@@ -64,7 +66,7 @@ async function decideActionImpl(
     contractPath = String(formData.get('contract__path') ?? '').trim();
     contractName = String(formData.get('contract__name') ?? '').trim() || 'العقد المعتمد.pdf';
     if (!contractPath.startsWith('pending/')) return { error: 'العقد المعتمد بصيغة PDF مطلوب قبل الاعتماد النهائي' };
-    const contractInfo = await statObject(contractPath);
+    const contractInfo = await inspectObject(contractPath);
     if (!contractInfo) return { error: 'لم يكتمل رفع العقد، حاول مرة أخرى' };
     if (contractInfo.mime !== 'application/pdf') return { error: 'العقد يجب أن يكون بصيغة PDF فقط' };
     if (contractInfo.size <= 0 || contractInfo.size > MAX_FILE_BYTES)

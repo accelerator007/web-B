@@ -15,9 +15,11 @@ import {
 } from '@/lib/validation';
 import { guard } from '@/lib/errors';
 import type { ActionState } from '@/lib/types';
+import { consumeRateLimit, isSpam } from '@/lib/rate-limit';
 
 /* ------------------------------------------------------------------ الدخول */
 async function loginActionImpl(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  if (isSpam(formData) || !(await consumeRateLimit('login', 10, 900))) return { error: 'محاولات كثيرة، حاول لاحقاً' };
   const employeeNumber = String(formData.get('employee_number') ?? '').trim();
   const password = String(formData.get('password') ?? '');
 
@@ -61,6 +63,7 @@ export async function logoutAction() {
 
 /* -------------------------------------------------------- طلب إنشاء حساب */
 async function registerActionImpl(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  if (isSpam(formData) || !(await consumeRateLimit('register', 5, 3600))) return { error: 'تعذّر إرسال الطلب، حاول لاحقاً' };
   const employeeNumber = String(formData.get('employee_number') ?? '').trim();
   const fullName = String(formData.get('full_name') ?? '').trim().replace(/\s+/g, ' ');
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
@@ -127,6 +130,7 @@ async function registerActionImpl(_prev: ActionState, formData: FormData): Promi
 
 /* ------------------------------------------- نسيت كلمة المرور — إرسال OTP */
 async function requestOtpActionImpl(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  if (isSpam(formData) || !(await consumeRateLimit('otp-request', 5, 3600))) return { error: 'محاولات كثيرة، حاول لاحقاً' };
   const identifier = String(formData.get('identifier') ?? '').trim();
   if (!identifier) return { error: 'أدخل الرقم الوظيفي أو البريد الإلكتروني' };
 
@@ -171,6 +175,7 @@ async function requestOtpActionImpl(_prev: ActionState, formData: FormData): Pro
 
 /* ------------------------------------- التحقق من OTP وتعيين كلمة مرور جديدة */
 async function resetPasswordActionImpl(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  if (!(await consumeRateLimit('otp-verify', 10, 900))) return { error: 'محاولات كثيرة، حاول لاحقاً' };
   const identifier = String(formData.get('identifier') ?? '').trim();
   const code = String(formData.get('code') ?? '').trim();
   const password = String(formData.get('password') ?? '');

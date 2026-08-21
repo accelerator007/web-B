@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { requireUser } from '@/lib/auth';
 import { db } from '@/lib/supabase';
-import { fetchInbox } from '@/lib/workflow';
+import { canViewRequest, fetchInbox } from '@/lib/workflow';
 import { DEPARTMENTS } from '@/lib/constants';
 import { RequestsTable } from '@/components/requests-table';
 import type { RequestRow } from '@/lib/types';
@@ -14,23 +14,14 @@ export default async function DashboardPage() {
 
   const inbox = user.role === 'admin' ? [] : await fetchInbox(user.department);
 
-  const counts = await Promise.all(
-    (['pending_departments', 'pending_finance', 'pending_investment', 'approved', 'rejected'] as const).map(
-      async (status) => {
-        const { count } = await supa
-          .from('requests')
-          .select('id', { count: 'exact', head: true })
-          .eq('status', status);
-        return count ?? 0;
-      }
-    )
-  );
-
-  const { data: latest } = await supa
+  const { data: allRows } = await supa
     .from('requests')
     .select('*')
-    .order('created_at', { ascending: false })
-    .limit(8);
+    .order('created_at', { ascending: false });
+  const visible = ((allRows ?? []) as RequestRow[]).filter((r) => canViewRequest(user, r));
+  const statuses = ['pending_departments', 'pending_finance', 'pending_investment', 'approved', 'rejected'] as const;
+  const counts = statuses.map((status) => visible.filter((r) => r.status === status).length);
+  const latest = visible.slice(0, 8);
 
   const stats = [
     { label: 'قيد دراسة الأقسام', value: counts[0], tone: 'text-amber-700 bg-amber-50' },
@@ -75,7 +66,7 @@ export default async function DashboardPage() {
       <section>
         <h2 className="mb-3 text-lg font-extrabold text-slate-900">أحدث الطلبات</h2>
         <RequestsTable
-          rows={(latest ?? []) as RequestRow[]}
+          rows={latest}
           basePath={user.role === 'admin' ? '/admin/requests' : '/dashboard/requests'}
         />
       </section>

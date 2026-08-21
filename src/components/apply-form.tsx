@@ -31,12 +31,16 @@ export function ApplyForm({
   // المرفقات المكتملة: مفتاح الحقل ⇒ مسار الملف في التخزين
   const [uploaded, setUploaded] = useState<Record<string, { path: string; name: string }>>({});
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
+  const [location, setLocation] = useState<{ url: string; lat: number; lng: number } | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState('');
 
   const missing = fields.filter((f) => !uploaded[f.key]);
   const busy = Object.values(uploading).some(Boolean);
 
   return (
     <form action={formAction} className="space-y-8">
+      <input name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
       {state?.error && <Alert kind="error">{state.error}</Alert>}
 
       {/* بيانات مقدّم الطلب */}
@@ -103,8 +107,37 @@ export function ApplyForm({
               dir="ltr"
               placeholder="https://maps.google.com/..."
               required
+              value={location?.url ?? undefined}
+              onChange={(e) => setLocation((old) => old ? { ...old, url: e.target.value } : null)}
             />
-            <p className="mt-1.5 text-xs text-slate-500">الصق رابط الموقع من خرائط Google أو أي خدمة خرائط.</p>
+            <input type="hidden" name="site_latitude" value={location?.lat ?? ''} />
+            <input type="hidden" name="site_longitude" value={location?.lng ?? ''} />
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className="btn-ghost !py-2 !text-sm"
+                disabled={locating}
+                onClick={() => {
+                  setLocationError('');
+                  if (!navigator.geolocation) return setLocationError('المتصفح لا يدعم تحديد الموقع');
+                  setLocating(true);
+                  navigator.geolocation.getCurrentPosition(
+                    ({ coords }) => {
+                      const lat = Number(coords.latitude.toFixed(6));
+                      const lng = Number(coords.longitude.toFixed(6));
+                      setLocation({ lat, lng, url: `https://www.google.com/maps?q=${lat},${lng}` });
+                      setLocating(false);
+                    },
+                    () => { setLocationError('تعذّر تحديد الموقع. اسمح للموقع بالوصول أو الصق رابط الخريطة.'); setLocating(false); },
+                    { enableHighAccuracy: true, timeout: 15000 }
+                  );
+                }}
+              >
+                {locating ? 'جارٍ تحديد الموقع…' : 'تحديد موقعي الحالي بدقة'}
+              </button>
+              <span className="text-xs text-slate-500">أو الصق رابط الموقع من تطبيق الخرائط.</span>
+            </div>
+            {locationError && <p className="mt-1.5 text-xs font-semibold text-rose-600">{locationError}</p>}
           </div>
 
           <div className="sm:col-span-2">
