@@ -41,7 +41,7 @@ export async function createSession(user: SessionUser) {
     .setExpirationTime(`${MAX_AGE}s`)
     .sign(secret());
 
-  cookies().set(COOKIE, token, {
+  (await cookies()).set(COOKIE, token, {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
@@ -50,12 +50,12 @@ export async function createSession(user: SessionUser) {
   });
 }
 
-export function destroySession() {
-  cookies().delete(COOKIE);
+export async function destroySession() {
+  (await cookies()).delete(COOKIE);
 }
 
 export async function getSession(): Promise<SessionUser | null> {
-  const token = cookies().get(COOKIE)?.value;
+  const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secret());
@@ -84,7 +84,7 @@ export async function requireUser(): Promise<SessionUser> {
     .maybeSingle();
 
   if (!data || data.status !== 'active') {
-    destroySession();
+    await destroySession();
     redirect('/login?error=disabled');
   }
 

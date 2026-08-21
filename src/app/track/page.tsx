@@ -8,8 +8,9 @@ import type { RequestRow } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
-export default async function TrackPage({ searchParams }: { searchParams: { civil?: string } }) {
-  const civil = (searchParams.civil ?? '').trim();
+export default async function TrackPage({ searchParams }: { searchParams: Promise<{ civil?: string }> }) {
+  const query = await searchParams;
+  const civil = (query.civil ?? '').trim();
   let error: string | null = null;
   let rows: RequestRow[] = [];
 

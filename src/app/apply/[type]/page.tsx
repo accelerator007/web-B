@@ -11,8 +11,8 @@ export function generateStaticParams() {
   return VALID.map((type) => ({ type }));
 }
 
-export default function ApplyPage({ params }: { params: { type: string } }) {
-  const type = params.type as RequestType;
+export default async function ApplyPage({ params }: { params: Promise<{ type: string }> }) {
+  const type = (await params).type as RequestType;
   if (!VALID.includes(type)) notFound();
 
   const action = submitRequest.bind(null, type);

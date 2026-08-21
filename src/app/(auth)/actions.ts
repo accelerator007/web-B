@@ -57,7 +57,7 @@ async function loginActionImpl(_prev: ActionState, formData: FormData): Promise<
 }
 
 export async function logoutAction() {
-  destroySession();
+  await destroySession();
   redirect('/login');
 }
 

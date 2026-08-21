@@ -9,7 +9,8 @@ import { logAudit } from '@/lib/notify';
  * فتح مرفق: متاح للموظفين المسجّلين فقط.
  * يُنشئ رابطاً موقّعاً مؤقتاً من Supabase Storage ثم يحوّل المستخدم إليه.
  */
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: 'غير مصرّح' }, { status: 401 });
@@ -18,7 +19,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const { data: attachment } = await db()
     .from('attachments')
     .select('id, request_id, storage_path, file_name, mime_type, requests(*)')
-    .eq('id', params.id)
+    .eq('id', id)
     .maybeSingle();
 
   if (!attachment) {

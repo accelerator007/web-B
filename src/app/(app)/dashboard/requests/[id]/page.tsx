@@ -17,9 +17,10 @@ import type { AttachmentRow, ReviewRow } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
-export default async function RequestDetailPage({ params }: { params: { id: string } }) {
+export default async function RequestDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
-  const { request, attachments, reviews } = await getRequestBundle(params.id);
+  const { id } = await params;
+  const { request, attachments, reviews } = await getRequestBundle(id);
   if (!request) notFound();
   if (!canViewRequest(user, request)) notFound();
 

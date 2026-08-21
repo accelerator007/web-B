@@ -26,9 +26,10 @@ function stageDepartment(r: RequestRow): Department {
   return 'admin';
 }
 
-export default async function AdminRequestDetail({ params }: { params: { id: string } }) {
+export default async function AdminRequestDetail({ params }: { params: Promise<{ id: string }> }) {
   const admin = await requireAdmin();
-  const { request, attachments, reviews } = await getRequestBundle(params.id);
+  const { id } = await params;
+  const { request, attachments, reviews } = await getRequestBundle(id);
   if (!request) notFound();
 
   const editable = canDecide(admin, request);

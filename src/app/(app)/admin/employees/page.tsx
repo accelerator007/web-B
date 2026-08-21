@@ -20,10 +20,10 @@ const STATUS_LABEL: Record<string, { text: string; cls: string }> = {
   disabled: { text: 'موقوف', cls: 'bg-slate-100 text-slate-700 ring-slate-200' },
 };
 
-export default async function AdminEmployeesPage({ searchParams }: { searchParams: { q?: string } }) {
+export default async function AdminEmployeesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   await requireAdmin();
-
-  const term = (searchParams.q ?? '').trim();
+  const queryParams = await searchParams;
+  const term = (queryParams.q ?? '').trim();
   let query = db().from('employees').select('*').order('created_at', { ascending: false });
   if (term) query = query.or(`employee_number.ilike.%${term}%,full_name.ilike.%${term}%,email.ilike.%${term}%`);
 

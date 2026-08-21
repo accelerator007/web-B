@@ -4,7 +4,7 @@ import { headers } from 'next/headers';
 import { db } from './supabase';
 
 export async function consumeRateLimit(scope: string, maxRequests: number, windowSeconds: number) {
-  const h = headers();
+  const h = await headers();
   const raw = h.get('x-nf-client-connection-ip') || h.get('cf-connecting-ip') || h.get('x-forwarded-for')?.split(',')[0] || 'unknown';
   const salt = process.env.SESSION_SECRET || 'local-rate-limit';
   const key = `${scope}:${createHash('sha256').update(`${salt}:${raw.trim()}`).digest('hex')}`;

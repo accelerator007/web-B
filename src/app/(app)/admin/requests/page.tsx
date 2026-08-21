@@ -9,9 +9,10 @@ import { deleteRequestAction } from '../actions';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminRequestsPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function AdminRequestsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   await requireAdmin();
-  const rows = await searchRequests(searchParams, { limit: 300 });
+  const query = await searchParams;
+  const rows = await searchRequests(query, { limit: 300 });
 
   return (
     <div className="space-y-6">
@@ -22,7 +23,7 @@ export default async function AdminRequestsPage({ searchParams }: { searchParams
         </p>
       </header>
 
-      <RequestsFilter action="/admin/requests" defaults={searchParams} showInbox={false} />
+      <RequestsFilter action="/admin/requests" defaults={query} showInbox={false} />
 
       <div className="text-sm font-semibold text-slate-600">النتائج: {rows.length}</div>
 
