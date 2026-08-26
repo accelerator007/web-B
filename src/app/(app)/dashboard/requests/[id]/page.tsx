@@ -50,7 +50,12 @@ export default async function RequestDetailPage({ params }: { params: Promise<{ 
           <DecisionsCard r={request} />
 
           {editable ? (
-            <DecisionForm action={action} actingAs={user.department} contractTicketAction={contractTicketAction} />
+            <DecisionForm
+              action={action}
+              actingAs={user.department}
+              requestStatus={request.status}
+              contractTicketAction={contractTicketAction}
+            />
           ) : (
             <Alert kind="info">
               {request.status === 'approved'

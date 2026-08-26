@@ -2,10 +2,10 @@ import { createClient } from '@supabase/supabase-js';
 import { gzipSync } from 'node:zlib';
 
 const TABLES = ['employees','requests','attachments','reviews','notifications','otp_codes','audit_log'];
-const LIMITS = { pending_departments: 3, pending_finance: 2, pending_investment: 3 };
-const DEPARTMENTS = { pending_departments: ['technical','health'], pending_finance: ['finance'], pending_investment: ['investment'] };
+const LIMITS = { pending_departments: 3, pending_finance: 2, pending_investment: 3, pending_payment: 3 };
+const DEPARTMENTS = { pending_departments: ['technical','health'], pending_finance: ['finance'], pending_investment: ['investment'], pending_payment: ['finance'] };
 
-export default async () => {
+const dailyMaintenance = async () => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error('Supabase environment is missing');
@@ -39,5 +39,7 @@ export default async () => {
   await supa.from('request_rate_limits').delete().lt('window_started_at', new Date(Date.now() - 2 * 86400000).toISOString());
   return new Response(null, { status: 204 });
 };
+
+export default dailyMaintenance;
 
 export const config = { schedule: '0 22 * * *' }; // 02:00 صباحاً بتوقيت عُمان

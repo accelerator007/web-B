@@ -58,6 +58,15 @@ async function decideActionImpl(
   const paymentStatus = String(formData.get('payment_status') ?? '') as 'paid' | 'unpaid' | 'exempt';
   const amountRaw = String(formData.get('payment_amount') ?? '').trim();
   const reference = String(formData.get('payment_reference') ?? '').trim();
+  const amount = amountRaw ? Number(amountRaw) : null;
+
+  if (actingAs === 'finance' && request.status === 'pending_payment' && decision === 'approved') {
+    if (!['paid', 'unpaid', 'exempt'].includes(paymentStatus)) return { error: 'الرجاء اختيار حالة الدفع' };
+    if (paymentStatus === 'paid' && (!Number.isFinite(amount) || amount == null || amount <= 0))
+      return { error: 'الرجاء إدخال مبلغ الدفع بشكل صحيح' };
+    if (paymentStatus === 'paid' && reference.length < 2)
+      return { error: 'الرجاء إدخال رقم الإيصال أو مرجع الدفع' };
+  }
 
   let contractPath: string | null = null;
   let contractName = '';
@@ -65,7 +74,7 @@ async function decideActionImpl(
   if (actingAs === 'investment' && decision === 'approved') {
     contractPath = String(formData.get('contract__path') ?? '').trim();
     contractName = String(formData.get('contract__name') ?? '').trim() || 'العقد المعتمد.pdf';
-    if (!contractPath.startsWith('pending/')) return { error: 'العقد المعتمد بصيغة PDF مطلوب قبل الاعتماد النهائي' };
+    if (!contractPath.startsWith('pending/')) return { error: 'العقد بصيغة PDF مطلوب قبل موافقة دائرة الاستثمار' };
     const contractInfo = await inspectObject(contractPath);
     if (!contractInfo) return { error: 'لم يكتمل رفع العقد، حاول مرة أخرى' };
     if (contractInfo.mime !== 'application/pdf') return { error: 'العقد يجب أن يكون بصيغة PDF فقط' };
@@ -108,7 +117,7 @@ async function decideActionImpl(
       actingAs === 'finance'
         ? {
             status: paymentStatus || (decision === 'approved' ? 'paid' : 'unpaid'),
-            amount: amountRaw ? Number(amountRaw) : null,
+            amount,
             reference: reference || null,
           }
         : undefined,
@@ -135,12 +144,23 @@ async function decideActionImpl(
   revalidatePath(`/admin/requests/${requestId}`);
   revalidatePath('/dashboard');
 
-  return { ok: true, message: decision === 'approved' ? 'تم حفظ الموافقة وتحويل الطلب.' : 'تم تسجيل الرفض.' };
+  let message = decision === 'rejected' ? 'تم تسجيل الرفض.' : 'تم حفظ الموافقة وتحويل الطلب.';
+  if (decision === 'approved' && request.status === 'pending_finance')
+    message = 'تمت دراسة الطلب وتحويله إلى دائرة الاستثمار.';
+  else if (decision === 'approved' && request.status === 'pending_investment')
+    message = 'تمت موافقة دائرة الاستثمار وإعادة الطلب إلى الشؤون المالية لاستكمال الدفع.';
+  else if (decision === 'approved' && request.status === 'pending_payment')
+    message = paymentStatus === 'unpaid'
+      ? 'تم حفظ حالة عدم الدفع، والمعاملة ما زالت بانتظار الدفع.'
+      : 'تم تأكيد الدفع واعتماد المعاملة نهائياً.';
+
+  return { ok: true, message };
 }
 
 function stageDepartment(r: RequestRow): Department {
   if (r.status === 'pending_finance') return 'finance';
   if (r.status === 'pending_investment') return 'investment';
+  if (r.status === 'pending_payment') return 'finance';
   return 'technical';
 }
 

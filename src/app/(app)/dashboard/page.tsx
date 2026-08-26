@@ -15,16 +15,17 @@ export default async function DashboardPage() {
     supa.from('requests').select('*').order('created_at', { ascending: false }),
   ]);
   const visible = ((allRows ?? []) as RequestRow[]).filter((r) => canViewRequest(user, r));
-  const statuses = ['pending_departments', 'pending_finance', 'pending_investment', 'approved', 'rejected'] as const;
+  const statuses = ['pending_departments', 'pending_finance', 'pending_investment', 'pending_payment', 'approved', 'rejected'] as const;
   const counts = statuses.map((status) => visible.filter((r) => r.status === status).length);
   const latest = visible.slice(0, 8);
 
   const stats = [
     { label: 'قيد دراسة الأقسام', value: counts[0], tone: 'text-amber-700 bg-amber-50' },
-    { label: 'لدى الشؤون المالية', value: counts[1], tone: 'text-sky-700 bg-sky-50' },
+    { label: 'قيد دراسة المالية', value: counts[1], tone: 'text-sky-700 bg-sky-50' },
     { label: 'لدى دائرة الاستثمار', value: counts[2], tone: 'text-indigo-700 bg-indigo-50' },
-    { label: 'معتمدة', value: counts[3], tone: 'text-emerald-700 bg-emerald-50' },
-    { label: 'مرفوضة', value: counts[4], tone: 'text-rose-700 bg-rose-50' },
+    { label: 'بانتظار الدفع', value: counts[3], tone: 'text-orange-700 bg-orange-50' },
+    { label: 'معتمدة', value: counts[4], tone: 'text-emerald-700 bg-emerald-50' },
+    { label: 'مرفوضة', value: counts[5], tone: 'text-rose-700 bg-rose-50' },
   ];
 
   return (
@@ -36,7 +37,7 @@ export default async function DashboardPage() {
         </p>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         {stats.map((s) => (
           <div key={s.label} className="card p-5">
             <div className={`inline-flex rounded-lg px-2.5 py-1 text-xs font-bold ${s.tone}`}>{s.label}</div>

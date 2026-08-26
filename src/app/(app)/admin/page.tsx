@@ -24,6 +24,7 @@ export default async function AdminHome() {
   const pendingDepartments = requests.filter((request) => request.status === 'pending_departments').length;
   const pendingFinance = requests.filter((request) => request.status === 'pending_finance').length;
   const pendingInvestment = requests.filter((request) => request.status === 'pending_investment').length;
+  const pendingPayment = requests.filter((request) => request.status === 'pending_payment').length;
   const approved = requests.filter((request) => request.status === 'approved').length;
   const rejected = requests.filter((request) => request.status === 'rejected').length;
   const typeNew = requests.filter((request) => request.type === 'new').length;
@@ -43,8 +44,9 @@ export default async function AdminHome() {
   const cards = [
     { label: 'إجمالي الطلبات', value: total, tone: 'bg-slate-900 text-white' },
     { label: 'قيد دراسة الأقسام', value: pendingDepartments, tone: 'bg-amber-50 text-amber-800' },
-    { label: 'لدى الشؤون المالية', value: pendingFinance, tone: 'bg-sky-50 text-sky-800' },
+    { label: 'قيد دراسة المالية', value: pendingFinance, tone: 'bg-sky-50 text-sky-800' },
     { label: 'لدى دائرة الاستثمار', value: pendingInvestment, tone: 'bg-indigo-50 text-indigo-800' },
+    { label: 'بانتظار الدفع', value: pendingPayment, tone: 'bg-orange-50 text-orange-800' },
     { label: 'معتمدة', value: approved, tone: 'bg-emerald-50 text-emerald-800' },
     { label: 'مرفوضة', value: rejected, tone: 'bg-rose-50 text-rose-800' },
   ];
@@ -63,7 +65,7 @@ export default async function AdminHome() {
         )}
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         {cards.map((c) => (
           <div key={c.label} className={`card p-5 ${c.tone === 'bg-slate-900 text-white' ? 'bg-slate-900' : ''}`}>
             <div

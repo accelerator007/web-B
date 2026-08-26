@@ -17,6 +17,8 @@ import { guard } from '@/lib/errors';
 import type { ActionState } from '@/lib/types';
 
 const DEPTS = ['technical', 'health', 'finance', 'investment', 'admin'];
+const ROLES = ['employee', 'admin'];
+const STATUSES = ['active', 'disabled'];
 
 /* ------------------------------------------------ اعتماد / رفض طلب حساب */
 async function decideAccountActionImpl(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -30,10 +32,11 @@ async function decideAccountActionImpl(_prev: ActionState, formData: FormData): 
   if (emp.status !== 'pending') return { error: 'تمت معالجة هذا الطلب مسبقاً' };
 
   if (decision === 'approve') {
-    await db()
+    const { error } = await db()
       .from('employees')
       .update({ status: 'active', approved_at: new Date().toISOString(), approved_by: admin.id })
       .eq('id', id);
+    if (error) return { error: `تعذّر اعتماد الحساب: ${error.message}` };
 
     await notifyEmployee({
       employeeId: id,
@@ -44,7 +47,8 @@ async function decideAccountActionImpl(_prev: ActionState, formData: FormData): 
     });
   } else if (decision === 'reject') {
     if (reason.length < 3) return { error: 'الرجاء كتابة سبب الرفض' };
-    await db().from('employees').update({ status: 'rejected', reject_reason: reason }).eq('id', id);
+    const { error } = await db().from('employees').update({ status: 'rejected', reject_reason: reason }).eq('id', id);
+    if (error) return { error: `تعذّر رفض الحساب: ${error.message}` };
 
     await notifyEmployee({
       employeeId: id,
@@ -88,6 +92,9 @@ async function createEmployeeActionImpl(_prev: ActionState, formData: FormData):
     validateArabicTripleName(fullName),
     validateEmail(email),
     !DEPTS.includes(department) ? 'الرجاء اختيار القسم' : null,
+    !ROLES.includes(role) ? 'الصلاحية غير معروفة' : null,
+    role === 'admin' && department !== 'admin' ? 'مدير النظام يجب أن يكون ضمن إدارة النظام' : null,
+    role === 'employee' && department === 'admin' ? 'موظف إدارة النظام يجب أن يحمل صلاحية مدير' : null,
     validatePassword(password),
     password !== confirm ? 'كلمتا المرور غير متطابقتين' : null,
   ].filter(Boolean) as string[];
@@ -160,6 +167,10 @@ async function updateEmployeeActionImpl(_prev: ActionState, formData: FormData):
     validateArabicTripleName(fullName),
     validateEmail(email),
     !DEPTS.includes(department) ? 'الرجاء اختيار القسم' : null,
+    !ROLES.includes(role) ? 'الصلاحية غير معروفة' : null,
+    role === 'admin' && department !== 'admin' ? 'مدير النظام يجب أن يكون ضمن إدارة النظام' : null,
+    role === 'employee' && department === 'admin' ? 'موظف إدارة النظام يجب أن يحمل صلاحية مدير' : null,
+    !STATUSES.includes(status) ? 'حالة الحساب غير معروفة' : null,
   ].filter(Boolean) as string[];
   if (errors.length) return { error: errors[0] };
 
@@ -212,7 +223,11 @@ async function changeEmployeePasswordActionImpl(
   const { data: emp } = await db().from('employees').select('email').eq('id', id).maybeSingle();
   if (!emp) return { error: 'الموظف غير موجود' };
 
-  await db().from('employees').update({ password_hash: await hashPassword(password) }).eq('id', id);
+  const { error: updateError } = await db()
+    .from('employees')
+    .update({ password_hash: await hashPassword(password) })
+    .eq('id', id);
+  if (updateError) return { error: `تعذّر تغيير كلمة المرور: ${updateError.message}` };
 
   await notifyEmployee({
     employeeId: id,
@@ -284,10 +299,9 @@ async function deleteRequestActionImpl(_prev: ActionState, formData: FormData): 
   if (!request) return { error: 'الطلب غير موجود' };
 
   const { data: files } = await supa.from('attachments').select('storage_path').eq('request_id', id);
-  await deleteAttachments((files ?? []).map((f) => f.storage_path));
-
   const { error } = await supa.from('requests').delete().eq('id', id);
   if (error) return { error: `تعذّر حذف الطلب: ${error.message}` };
+  await deleteAttachments((files ?? []).map((f) => f.storage_path));
 
   await logAudit({
     actorId: admin.id,
@@ -301,7 +315,7 @@ async function deleteRequestActionImpl(_prev: ActionState, formData: FormData): 
   revalidatePath('/admin/requests');
 
   const redirectTo = String(formData.get('redirect_to') ?? '');
-  if (redirectTo) redirect(redirectTo);
+  if (redirectTo.startsWith('/') && !redirectTo.startsWith('//')) redirect(redirectTo);
 
   return { ok: true, message: `تم حذف الطلب ${request.request_number} ومرفقاته.` };
 }

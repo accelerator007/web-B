@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/auth';
+import { getActiveSession } from '@/lib/auth';
 import { db } from '@/lib/supabase';
 import { signedUrl } from '@/lib/storage';
 import { canViewRequest } from '@/lib/workflow';
@@ -11,7 +11,7 @@ import { logAudit } from '@/lib/notify';
  */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const session = await getSession();
+  const session = await getActiveSession();
   if (!session) {
     return NextResponse.json({ error: 'غير مصرّح' }, { status: 401 });
   }

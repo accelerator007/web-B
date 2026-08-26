@@ -31,7 +31,8 @@ export function ApplyForm({
   // المرفقات المكتملة: مفتاح الحقل ⇒ مسار الملف في التخزين
   const [uploaded, setUploaded] = useState<Record<string, { path: string; name: string }>>({});
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
-  const [location, setLocation] = useState<{ url: string; lat: number; lng: number } | null>(null);
+  const [locationUrl, setLocationUrl] = useState('');
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState('');
 
@@ -107,11 +108,14 @@ export function ApplyForm({
               dir="ltr"
               placeholder="https://maps.google.com/..."
               required
-              value={location?.url ?? undefined}
-              onChange={(e) => setLocation((old) => old ? { ...old, url: e.target.value } : null)}
+              value={locationUrl}
+              onChange={(event) => {
+                setLocationUrl(event.target.value);
+                setCoordinates(null);
+              }}
             />
-            <input type="hidden" name="site_latitude" value={location?.lat ?? ''} />
-            <input type="hidden" name="site_longitude" value={location?.lng ?? ''} />
+            <input type="hidden" name="site_latitude" value={coordinates?.lat ?? ''} />
+            <input type="hidden" name="site_longitude" value={coordinates?.lng ?? ''} />
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <button
                 type="button"
@@ -125,7 +129,8 @@ export function ApplyForm({
                     ({ coords }) => {
                       const lat = Number(coords.latitude.toFixed(6));
                       const lng = Number(coords.longitude.toFixed(6));
-                      setLocation({ lat, lng, url: `https://www.google.com/maps?q=${lat},${lng}` });
+                      setCoordinates({ lat, lng });
+                      setLocationUrl(`https://www.google.com/maps?q=${lat},${lng}`);
                       setLocating(false);
                     },
                     () => { setLocationError('تعذّر تحديد الموقع. اسمح للموقع بالوصول أو الصق رابط الخريطة.'); setLocating(false); },
@@ -190,7 +195,7 @@ export function ApplyForm({
         )}
         {missing.length === 0 && !busy && (
           <span className="text-xs text-slate-500">
-            بعد التقديم سيصلك رقم طلب يمكنك تتبّعه عبر الرقم المدني.
+            بعد التقديم سيصلك رقم طلب يمكنك تتبّعه مع الرقم المدني.
           </span>
         )}
       </div>

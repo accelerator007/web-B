@@ -120,12 +120,13 @@ export default function HomePage() {
         <section className="border-y border-slate-200 bg-white">
           <div className="mx-auto max-w-6xl px-4 py-14">
             <h2 className="text-xl font-extrabold text-slate-900">مسار دراسة الطلب</h2>
-            <div className="mt-8 grid gap-4 md:grid-cols-4">
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               {[
                 { n: '١', t: 'الشؤون الفنية والرقابة الصحية', d: 'يُحال الطلب فور تقديمه إلى القسمين لدراسته، ولكل قسم قبول أو رفض مع الملاحظات.' },
-                { n: '٢', t: 'الشؤون المالية', d: 'بعد موافقة القسمين يُحال الطلب للمالية لتأكيد سداد الرسوم.' },
-                { n: '٣', t: 'دائرة الاستثمار', d: 'الاعتماد النهائي للطلب بعد اكتمال الإجراءات المالية.' },
-                { n: '٤', t: 'إشعار المواطن', d: 'يمكن تتبّع نتيجة الطلب في أي وقت عبر الرقم المدني.' },
+                { n: '٢', t: 'دراسة الشؤون المالية', d: 'بعد موافقة القسمين تدرس المالية الطلب ثم تحوّله إلى دائرة الاستثمار.' },
+                { n: '٣', t: 'دائرة الاستثمار', d: 'تراجع الدائرة الطلب وتوافق عليه قبل إعادته إلى الشؤون المالية.' },
+                { n: '٤', t: 'استكمال الدفع', d: 'تؤكد المالية الدفع أو الإعفاء، وعندها تُعتمد المعاملة نهائياً.' },
+                { n: '٥', t: 'إشعار المواطن', d: 'يمكن تتبّع النتيجة في أي وقت باستخدام الرقم المدني ورقم الطلب.' },
               ].map((step) => (
                 <div key={step.n} className="rounded-2xl border border-slate-200 p-5">
                   <span className="grid h-9 w-9 place-items-center rounded-full bg-brand-50 font-bold text-brand-700">

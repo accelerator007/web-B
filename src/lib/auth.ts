@@ -73,25 +73,15 @@ export async function getSession(): Promise<SessionUser | null> {
   }
 }
 
-/** يتحقق من الجلسة ومن أن الحساب ما زال مفعّلاً في قاعدة البيانات */
-/**
- * React cache prevents the layout and the page from validating the same session
- * with two identical Supabase round-trips during a single render.
- */
-export const requireUser = cache(async (): Promise<SessionUser> => {
-  const session = await getSession();
-  if (!session) redirect('/login');
-
+/** يعيد بيانات جلسة محدثة من قاعدة البيانات، ويرفض الحسابات المحذوفة أو الموقوفة. */
+async function refreshSessionUser(session: SessionUser): Promise<SessionUser | null> {
   const { data } = await db()
     .from('employees')
     .select('id, status, role, department, full_name, employee_number, email')
     .eq('id', session.id)
     .maybeSingle();
 
-  if (!data || data.status !== 'active') {
-    await destroySession();
-    redirect('/login?error=disabled');
-  }
+  if (!data || data.status !== 'active') return null;
 
   return {
     id: data.id,
@@ -101,6 +91,24 @@ export const requireUser = cache(async (): Promise<SessionUser> => {
     department: data.department as Department,
     role: data.role as 'employee' | 'admin',
   };
+}
+
+export async function getActiveSession(): Promise<SessionUser | null> {
+  const session = await getSession();
+  return session ? refreshSessionUser(session) : null;
+}
+
+/** يتحقق من الجلسة ومن أن الحساب ما زال مفعّلاً في قاعدة البيانات */
+/**
+ * React cache prevents the layout and the page from validating the same session
+ * with two identical Supabase round-trips during a single render.
+ */
+export const requireUser = cache(async (): Promise<SessionUser> => {
+  const session = await getSession();
+  if (!session) redirect('/login');
+  const user = await refreshSessionUser(session);
+  if (!user) redirect('/login?error=disabled');
+  return user;
 });
 
 export const requireAdmin = cache(async (): Promise<SessionUser> => {

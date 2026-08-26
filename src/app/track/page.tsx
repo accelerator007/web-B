@@ -5,22 +5,31 @@ import { db } from '@/lib/supabase';
 import { DEPARTMENTS, REQUEST_TYPES } from '@/lib/constants';
 import { validateCivilNumber } from '@/lib/validation';
 import type { RequestRow } from '@/lib/types';
+import { consumeRateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
-export default async function TrackPage({ searchParams }: { searchParams: Promise<{ civil?: string }> }) {
+export default async function TrackPage({ searchParams }: { searchParams: Promise<{ civil?: string; request?: string }> }) {
   const query = await searchParams;
   const civil = (query.civil ?? '').trim();
+  const requestNumber = (query.request ?? '').trim().toUpperCase();
   let error: string | null = null;
   let rows: RequestRow[] = [];
 
-  if (civil) {
+  if (civil || requestNumber) {
     error = validateCivilNumber(civil);
+    if (!error && !/^SWQ-[0-9]{4}-[0-9]{5}$/.test(requestNumber)) {
+      error = 'رقم الطلب غير صحيح (مثال: SWQ-2026-00001)';
+    }
+    if (!error && !(await consumeRateLimit('track-request', 30, 3600))) {
+      error = 'محاولات بحث كثيرة، حاول لاحقاً';
+    }
     if (!error) {
       const { data } = await db()
         .from('requests')
         .select('*')
         .eq('civil_number', civil)
+        .eq('request_number', requestNumber)
         .order('created_at', { ascending: false });
       rows = (data ?? []) as RequestRow[];
     }
@@ -33,10 +42,10 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-10">
         <h1 className="text-2xl font-extrabold text-slate-900">تتبّع الطلبات</h1>
         <p className="mt-2 text-sm text-slate-600">
-          أدخل الرقم المدني لعرض جميع طلباتك وحالتها الحالية.
+          أدخل الرقم المدني ورقم الطلب لعرض حالته بأمان.
         </p>
 
-        <form className="card mt-6 flex flex-col gap-3 p-5 sm:flex-row sm:items-end" method="get">
+        <form className="card mt-6 grid gap-3 p-5 sm:grid-cols-[1fr_1fr_auto] sm:items-end" method="get">
           <div className="flex-1">
             <label className="label" htmlFor="civil">
               الرقم المدني
@@ -52,6 +61,18 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
               required
             />
           </div>
+          <div>
+            <label className="label" htmlFor="request">رقم الطلب</label>
+            <input
+              id="request"
+              name="request"
+              defaultValue={requestNumber}
+              dir="ltr"
+              className="input"
+              placeholder="SWQ-2026-00001"
+              required
+            />
+          </div>
           <button type="submit" className="btn-primary sm:w-40">
             بحث
           </button>
@@ -60,8 +81,8 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
         <div className="mt-8 space-y-5">
           {error && <Alert kind="error">{error}</Alert>}
 
-          {civil && !error && rows.length === 0 && (
-            <EmptyState title="لا توجد طلبات مرتبطة بهذا الرقم المدني" hint="تأكد من صحة الرقم المدني المُدخل." />
+          {(civil || requestNumber) && !error && rows.length === 0 && (
+            <EmptyState title="لم يتم العثور على الطلب" hint="تأكد من صحة الرقم المدني ورقم الطلب." />
           )}
 
           {rows.map((r) => (
@@ -125,10 +146,12 @@ function CitizenRequestCard({ r }: { r: RequestRow }) {
         <StageRow
           title={DEPARTMENTS.finance}
           decision={
-            r.payment_status === 'paid' || r.payment_status === 'exempt'
-              ? 'approved'
-              : r.rejected_by_department === 'finance'
+            r.rejected_by_department === 'finance'
               ? 'rejected'
+              : r.status === 'pending_payment'
+              ? null
+              : r.finance_at
+              ? 'approved'
               : null
           }
           decisionLabel={
@@ -136,7 +159,13 @@ function CitizenRequestCard({ r }: { r: RequestRow }) {
               ? 'تم الدفع'
               : r.payment_status === 'exempt'
               ? 'معفى من الرسوم'
-              : undefined
+              : r.status === 'pending_payment'
+              ? 'بانتظار الدفع'
+              : r.status === 'pending_finance'
+              ? 'قيد الدراسة'
+              : r.finance_at
+              ? 'تمت الدراسة'
+              : 'بانتظار الدراسة'
           }
           notes={r.finance_notes}
           by={r.finance_by_name}
@@ -144,7 +173,7 @@ function CitizenRequestCard({ r }: { r: RequestRow }) {
         />
         <StageRow
           title={DEPARTMENTS.investment}
-          decision={r.status === 'approved' ? 'approved' : r.rejected_by_department === 'investment' ? 'rejected' : null}
+          decision={r.rejected_by_department === 'investment' ? 'rejected' : r.investment_at ? 'approved' : null}
           notes={r.investment_notes}
           by={r.investment_by_name}
           at={r.investment_at}

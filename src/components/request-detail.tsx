@@ -33,7 +33,9 @@ export function RequestHeader({ r }: { r: RequestRow }) {
               ? `تم الدفع${r.payment_amount ? ` — ${r.payment_amount} ر.ع` : ''}`
               : r.payment_status === 'exempt'
               ? 'معفى من الرسوم'
-              : 'لم يتم الدفع'
+              : r.status === 'pending_payment'
+              ? 'بانتظار الدفع'
+              : 'لم تبدأ مرحلة الدفع'
           }
         />
       </dl>
@@ -169,10 +171,12 @@ export function DecisionsCard({ r }: { r: RequestRow }) {
     {
       dep: 'finance',
       decision:
-        r.payment_status === 'paid' || r.payment_status === 'exempt'
-          ? 'approved'
-          : r.rejected_by_department === 'finance'
+        r.rejected_by_department === 'finance'
           ? 'rejected'
+          : r.status === 'pending_payment'
+          ? null
+          : r.finance_at
+          ? 'approved'
           : null,
       label:
         r.payment_status === 'paid'
@@ -181,7 +185,13 @@ export function DecisionsCard({ r }: { r: RequestRow }) {
           ? 'معفى من الرسوم'
           : r.rejected_by_department === 'finance'
           ? 'مرفوض'
-          : 'بانتظار الدفع',
+          : r.status === 'pending_payment'
+          ? 'بانتظار الدفع'
+          : r.status === 'pending_finance'
+          ? 'قيد الدراسة'
+          : r.finance_at
+          ? 'تمت الدراسة'
+          : 'بانتظار الدراسة',
       notes: r.finance_notes,
       by: r.finance_by_name,
       number: r.finance_by_number,
@@ -190,7 +200,7 @@ export function DecisionsCard({ r }: { r: RequestRow }) {
     {
       dep: 'investment',
       decision:
-        r.status === 'approved' ? 'approved' : r.rejected_by_department === 'investment' ? 'rejected' : null,
+        r.rejected_by_department === 'investment' ? 'rejected' : r.investment_at ? 'approved' : null,
       notes: r.investment_notes,
       by: r.investment_by_name,
       number: r.investment_by_number,

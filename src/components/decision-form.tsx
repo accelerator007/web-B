@@ -4,7 +4,7 @@ import { useFormState } from 'react-dom';
 import { useState } from 'react';
 import { SubmitButton } from './submit-button';
 import { Alert } from './ui';
-import { DEPARTMENTS, type Department } from '@/lib/constants';
+import { DEPARTMENTS, type Department, type RequestStatus } from '@/lib/constants';
 import { MAX_FILE_BYTES } from '@/lib/constants';
 import { browserStorage } from '@/lib/supabase-browser';
 import type { ActionState } from '@/lib/types';
@@ -19,20 +19,24 @@ type ContractTicketAction = (input: {
 export function DecisionForm({
   action,
   actingAs,
+  requestStatus,
   isAdmin = false,
   contractTicketAction,
 }: {
   action: Action;
   actingAs: Department;
+  requestStatus: RequestStatus;
   isAdmin?: boolean;
   contractTicketAction?: ContractTicketAction;
 }) {
   const [state, formAction] = useFormState(action, null);
   const [decision, setDecision] = useState<'approved' | 'rejected' | ''>('');
-  const [paymentStatus, setPaymentStatus] = useState<'paid' | 'exempt' | 'unpaid'>('paid');
+  const [paymentStatus, setPaymentStatus] = useState<'paid' | 'exempt' | 'unpaid'>('unpaid');
   const [contract, setContract] = useState<{ path: string; name: string; size: number } | null>(null);
   const [contractStatus, setContractStatus] = useState<'idle' | 'uploading' | 'done' | 'error'>('idle');
   const [contractError, setContractError] = useState<string | null>(null);
+  const isPaymentStage = actingAs === 'finance' && requestStatus === 'pending_payment';
+  const isFinanceStudy = actingAs === 'finance' && requestStatus === 'pending_finance';
 
   async function uploadContract(file: File | undefined, reset: () => void) {
     if (!file || !contractTicketAction) return;
@@ -73,7 +77,7 @@ export function DecisionForm({
   return (
     <form action={formAction} className="card p-6">
       <h2 className="text-lg font-extrabold text-slate-900">
-        القرار — {DEPARTMENTS[actingAs]}
+        {isPaymentStage ? 'استكمال الدفع' : 'القرار'} — {DEPARTMENTS[actingAs]}
         {isAdmin && <span className="mr-2 text-xs font-bold text-amber-700">(نيابةً عن الجهة)</span>}
       </h2>
 
@@ -98,14 +102,16 @@ export function DecisionForm({
               required
             />
             <div className="font-bold text-slate-800">
-              {actingAs === 'finance' ? 'اعتماد الإجراء المالي' : 'موافقة'}
+              {isPaymentStage ? 'حفظ حالة الدفع' : isFinanceStudy ? 'الموافقة والتحويل للاستثمار' : 'موافقة'}
             </div>
             <div className="mt-1 text-xs text-slate-500">
               {actingAs === 'technical' || actingAs === 'health'
                 ? 'تحويل الطلب للمرحلة التالية بعد موافقة القسمين'
-                : actingAs === 'finance'
-                ? 'تحويل الطلب إلى دائرة الاستثمار'
-                : 'اعتماد الطلب نهائياً'}
+                : isFinanceStudy
+                ? 'اعتماد الدراسة وتحويل الطلب إلى دائرة الاستثمار'
+                : isPaymentStage
+                ? 'إذا تم الدفع أو الإعفاء تُعتمد المعاملة نهائياً'
+                : 'إعادة الطلب للشؤون المالية لاستكمال الدفع'}
             </div>
           </label>
 
@@ -126,7 +132,7 @@ export function DecisionForm({
           </label>
         </div>
 
-        {actingAs === 'finance' && decision !== 'rejected' && (
+        {isPaymentStage && decision !== 'rejected' && (
           <div className="grid gap-4 rounded-xl bg-slate-50 p-4 sm:grid-cols-3">
             <div>
               <label className="label" htmlFor="payment_status">
@@ -145,7 +151,7 @@ export function DecisionForm({
               </select>
               {paymentStatus === 'unpaid' && (
                 <p className="mt-1.5 text-xs text-amber-700">
-                  لن يُحوّل الطلب لدائرة الاستثمار قبل تأكيد الدفع أو الإعفاء.
+                  ستبقى المعاملة بانتظار الدفع ولن تُعتمد نهائياً.
                 </p>
               )}
             </div>
@@ -161,6 +167,8 @@ export function DecisionForm({
                 inputMode="decimal"
                 className="input"
                 placeholder="0.000"
+                required={paymentStatus === 'paid'}
+                disabled={paymentStatus !== 'paid'}
               />
             </div>
 
@@ -168,7 +176,14 @@ export function DecisionForm({
               <label className="label" htmlFor="payment_reference">
                 رقم الإيصال / المرجع
               </label>
-              <input id="payment_reference" name="payment_reference" dir="ltr" className="input" />
+              <input
+                id="payment_reference"
+                name="payment_reference"
+                dir="ltr"
+                className="input"
+                required={paymentStatus === 'paid'}
+                disabled={paymentStatus !== 'paid'}
+              />
             </div>
           </div>
         )}
