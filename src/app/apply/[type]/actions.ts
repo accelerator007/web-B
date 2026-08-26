@@ -132,24 +132,28 @@ async function submitRequestImpl(
   }
 
   // نقل المرفقات من المسار المؤقت إلى مجلد الطلب وتسجيلها
+  const storedPaths: string[] = [];
   try {
     for (const u of uploads) {
       const ext = u.path.split('.').pop() ?? 'bin';
       const target = `requests/${inserted.id}/${u.fieldKey}-${crypto.randomUUID()}.${ext}`;
       const moved = await moveAttachment(u.path, target);
+      if (!moved) throw new Error(`تعذّر نقل المرفق: ${u.fileName}`);
+      storedPaths.push(target);
 
-      await supa.from('attachments').insert({
+      const { error: attachmentError } = await supa.from('attachments').insert({
         request_id: inserted.id,
         field_key: u.fieldKey,
         file_name: u.fileName,
-        storage_path: moved ? target : u.path,
+        storage_path: target,
         mime_type: u.mime || null,
         size_bytes: u.size,
       });
+      if (attachmentError) throw new Error(`تعذّر تسجيل المرفق: ${attachmentError.message}`);
     }
   } catch (e) {
     await supa.from('requests').delete().eq('id', inserted.id);
-    await deleteAttachments(uploads.map((u) => u.path));
+    await deleteAttachments([...uploads.map((u) => u.path), ...storedPaths]);
     return { error: e instanceof Error ? e.message : 'تعذّر حفظ المرفقات' };
   }
 

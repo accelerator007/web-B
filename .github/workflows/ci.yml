@@ -1,0 +1,38 @@
+name: فحص المشروع
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: تنزيل المشروع
+        uses: actions/checkout@v4
+
+      - name: إعداد Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: تثبيت الحزم
+        run: npm ci
+
+      - name: فحص التنسيق والقواعد
+        run: npm run lint
+
+      - name: فحص TypeScript
+        run: npx tsc --noEmit
+
+      - name: البناء الإنتاجي
+        run: npm run build
+
+      - name: فحص الثغرات
+        run: npm audit --audit-level=moderate

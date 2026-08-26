@@ -140,8 +140,43 @@ export async function applyDecision(input: DecisionInput): Promise<{ error?: str
     return { error: 'قسم غير مصرّح له باتخاذ قرار' };
   }
 
-  const { error } = await supa.from('requests').update(patch).eq('id', r.id);
+  let update = supa.from('requests').update(patch).eq('id', r.id).eq('status', r.status);
+  if (actingAs === 'technical') update = update.is('technical_decision', null);
+  if (actingAs === 'health') update = update.is('health_decision', null);
+
+  const { data: updated, error } = await update.select('id').maybeSingle();
   if (error) return { error: `تعذّر حفظ القرار: ${error.message}` };
+  if (!updated) return { error: 'تم تحديث الطلب من موظف آخر. حدّث الصفحة لمشاهدة الحالة الحالية.' };
+
+  // إذا وافق القسمان في اللحظة نفسها فقد يقرأ كل منهما موافقة الآخر قبل حفظها.
+  // إعادة الفحص مع تحديث شرطي تضمن انتقال الطلب مرة واحدة فقط إلى المالية.
+  let nextStatus = patch.status ?? r.status;
+  let ownsTransition = Boolean(patch.status);
+  if ((actingAs === 'technical' || actingAs === 'health') && decision === 'approved' && !patch.status) {
+    const { data: latest } = await supa
+      .from('requests')
+      .select('status,technical_decision,health_decision')
+      .eq('id', r.id)
+      .maybeSingle();
+
+    if (
+      latest?.status === 'pending_departments' &&
+      latest.technical_decision === 'approved' &&
+      latest.health_decision === 'approved'
+    ) {
+      const { data: advanced } = await supa
+        .from('requests')
+        .update({ status: 'pending_finance' })
+        .eq('id', r.id)
+        .eq('status', 'pending_departments')
+        .select('id')
+        .maybeSingle();
+      if (advanced) {
+        nextStatus = 'pending_finance';
+        ownsTransition = true;
+      }
+    }
+  }
 
   await supa.from('reviews').insert({
     request_id: r.id,
@@ -159,17 +194,16 @@ export async function applyDecision(input: DecisionInput): Promise<{ error?: str
   });
 
   // إشعار المرحلة التالية
-  const nextStatus = patch.status ?? r.status;
   const summary = `الطلب ${r.request_number} (${REQUEST_TYPES[r.type]}) — الرقم المدني ${r.civil_number}`;
 
-  if (nextStatus === 'pending_finance') {
+  if (nextStatus === 'pending_finance' && ownsTransition) {
     await notifyDepartment({
       department: 'finance',
       title: 'طلب محوّل إلى الشؤون المالية',
       body: `${summary}: اعتمدته الشؤون الفنية والرقابة الغذائية والصحية، وينتظر إجراءات الدفع.`,
       requestId: r.id,
     });
-  } else if (nextStatus === 'pending_investment') {
+  } else if (nextStatus === 'pending_investment' && ownsTransition) {
     await notifyDepartment({
       department: 'investment',
       title: 'طلب محوّل إلى دائرة الاستثمار',
@@ -178,7 +212,7 @@ export async function applyDecision(input: DecisionInput): Promise<{ error?: str
       })، وينتظر الاعتماد النهائي.`,
       requestId: r.id,
     });
-  } else if (nextStatus === 'rejected') {
+  } else if (nextStatus === 'rejected' && ownsTransition) {
     await notifyAdmins({
       title: 'طلب مرفوض',
       body: `${summary}: تم رفضه من ${DEPARTMENTS[actingAs]} بواسطة ${user.full_name}${
@@ -186,7 +220,7 @@ export async function applyDecision(input: DecisionInput): Promise<{ error?: str
       }.`,
       link: `/admin/requests/${r.id}`,
     });
-  } else if (nextStatus === 'approved') {
+  } else if (nextStatus === 'approved' && ownsTransition) {
     await notifyAdmins({
       title: 'اعتماد نهائي لطلب',
       body: `${summary}: تم اعتماده نهائياً من دائرة الاستثمار بواسطة ${user.full_name}.`,

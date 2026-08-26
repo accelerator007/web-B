@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import bcrypt from 'bcryptjs';
+import { randomInt } from 'node:crypto';
 import { db } from '@/lib/supabase';
 import { createSession, destroySession, hashPassword, verifyPassword } from '@/lib/auth';
 import { notifyAdmins, notifyEmployee, logAudit } from '@/lib/notify';
@@ -149,15 +150,16 @@ async function requestOtpActionImpl(_prev: ActionState, formData: FormData): Pro
 
   if (!emp || emp.status === 'rejected') return generic;
 
-  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const code = String(randomInt(100000, 1000000));
   const codeHash = await bcrypt.hash(code, 8);
 
-  await supa.from('otp_codes').insert({
+  const { error: otpError } = await supa.from('otp_codes').insert({
     employee_id: emp.id,
     code_hash: codeHash,
     purpose: 'password_reset',
     expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
   });
+  if (otpError) return generic;
 
   await sendEmail({
     to: emp.email,
@@ -217,8 +219,20 @@ async function resetPasswordActionImpl(_prev: ActionState, formData: FormData): 
     return { error: 'رمز التحقق غير صحيح' };
   }
 
-  await supa.from('employees').update({ password_hash: await hashPassword(password) }).eq('id', emp.id);
-  await supa.from('otp_codes').update({ used_at: new Date().toISOString() }).eq('id', otp.id);
+  const { data: consumed, error: usedError } = await supa
+    .from('otp_codes')
+    .update({ used_at: new Date().toISOString() })
+    .eq('id', otp.id)
+    .is('used_at', null)
+    .select('id')
+    .maybeSingle();
+  if (usedError || !consumed) return { error: 'تم استخدام رمز التحقق مسبقاً، اطلب رمزاً جديداً' };
+
+  const { error: passwordError } = await supa
+    .from('employees')
+    .update({ password_hash: await hashPassword(password) })
+    .eq('id', emp.id);
+  if (passwordError) return { error: 'تعذّر تغيير كلمة المرور. اطلب رمزاً جديداً وحاول مرة أخرى' };
 
   await notifyEmployee({
     employeeId: emp.id,

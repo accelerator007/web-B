@@ -34,11 +34,14 @@ export default function SuccessPage({
           </div>
 
           <p className="mt-5 text-sm text-slate-600">
-            احتفظ برقم الطلب، ويمكنك متابعة حالته في أي وقت عبر الرقم المدني.
+            احتفظ برقم الطلب، ويمكنك متابعة حالته في أي وقت باستخدامه مع الرقم المدني.
           </p>
 
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link href={`/track${civil ? `?civil=${encodeURIComponent(civil)}` : ''}`} className="btn-primary">
+            <Link
+              href={`/track?civil=${encodeURIComponent(civil)}&request=${encodeURIComponent(number)}`}
+              className="btn-primary"
+            >
               تتبّع الطلب الآن
             </Link>
             <Link href="/" className="btn-ghost">

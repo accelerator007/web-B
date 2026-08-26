@@ -3,8 +3,8 @@ import 'server-only';
 /**
  * إرسال البريد الإلكتروني.
  * - إذا وُجد RESEND_API_KEY يُرسل فعلياً عبر Resend.
- * - إذا لم يوجد (بيئة التطوير) يُطبع البريد في سجل الخادم بدل الإرسال،
- *   حتى يستمر النظام في العمل دون إعدادات بريد.
+ * - إذا لم يوجد، يستمر النظام دون إرسال. في التطوير فقط يُطبع المحتوى للمساعدة
+ *   في اختبار رموز OTP، ولا يُطبع المحتوى الحساس في سجل الإنتاج.
  */
 export async function sendEmail(opts: {
   to: string;
@@ -18,7 +18,9 @@ export async function sendEmail(opts: {
     console.log('\n📧 [بريد غير مُرسل — RESEND_API_KEY غير معرّف]');
     console.log('   إلى:', opts.to);
     console.log('   الموضوع:', opts.subject);
-    console.log('   المحتوى:', opts.html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(), '\n');
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('   المحتوى:', opts.html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(), '\n');
+    }
     return { ok: false, error: 'mail_not_configured' };
   }
 
