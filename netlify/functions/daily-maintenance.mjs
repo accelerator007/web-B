@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import { gzipSync } from 'node:zlib';
 
 const TABLES = ['employees','requests','attachments','reviews','notifications','otp_codes','audit_log'];
-const LIMITS = { pending_departments: 3, pending_finance: 2, pending_investment: 3 };
-const DEPARTMENTS = { pending_departments: ['technical','health'], pending_finance: ['finance'], pending_investment: ['investment'] };
+const LIMITS = { pending_departments: 3, pending_finance: 2, pending_investment: 3, pending_payment: 3 };
+const DEPARTMENTS = { pending_departments: ['technical','health'], pending_finance: ['finance'], pending_investment: ['investment'], pending_payment: ['finance'] };
 
 const dailyMaintenance = async () => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

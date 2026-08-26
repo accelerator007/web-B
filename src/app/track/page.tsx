@@ -146,10 +146,12 @@ function CitizenRequestCard({ r }: { r: RequestRow }) {
         <StageRow
           title={DEPARTMENTS.finance}
           decision={
-            r.payment_status === 'paid' || r.payment_status === 'exempt'
-              ? 'approved'
-              : r.rejected_by_department === 'finance'
+            r.rejected_by_department === 'finance'
               ? 'rejected'
+              : r.status === 'pending_payment'
+              ? null
+              : r.finance_at
+              ? 'approved'
               : null
           }
           decisionLabel={
@@ -157,7 +159,13 @@ function CitizenRequestCard({ r }: { r: RequestRow }) {
               ? 'تم الدفع'
               : r.payment_status === 'exempt'
               ? 'معفى من الرسوم'
-              : undefined
+              : r.status === 'pending_payment'
+              ? 'بانتظار الدفع'
+              : r.status === 'pending_finance'
+              ? 'قيد الدراسة'
+              : r.finance_at
+              ? 'تمت الدراسة'
+              : 'بانتظار الدراسة'
           }
           notes={r.finance_notes}
           by={r.finance_by_name}
@@ -165,7 +173,7 @@ function CitizenRequestCard({ r }: { r: RequestRow }) {
         />
         <StageRow
           title={DEPARTMENTS.investment}
-          decision={r.status === 'approved' ? 'approved' : r.rejected_by_department === 'investment' ? 'rejected' : null}
+          decision={r.rejected_by_department === 'investment' ? 'rejected' : r.investment_at ? 'approved' : null}
           notes={r.investment_notes}
           by={r.investment_by_name}
           at={r.investment_at}

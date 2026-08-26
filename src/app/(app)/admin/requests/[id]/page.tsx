@@ -22,6 +22,7 @@ export const dynamic = 'force-dynamic';
 function stageDepartment(r: RequestRow): Department {
   if (r.status === 'pending_finance') return 'finance';
   if (r.status === 'pending_investment') return 'investment';
+  if (r.status === 'pending_payment') return 'finance';
   if (r.status === 'pending_departments') return r.technical_decision ? 'health' : 'technical';
   return 'admin';
 }
@@ -73,7 +74,13 @@ export default async function AdminRequestDetail({ params }: { params: Promise<{
                 بصفتك مدير النظام يمكنك اتخاذ القرار نيابةً عن الجهة المسؤولة عن المرحلة الحالية، وسيُسجَّل
                 باسمك في سجل الإجراءات.
               </Alert>
-              <DecisionForm action={action} actingAs={stageDepartment(request)} isAdmin contractTicketAction={contractTicketAction} />
+              <DecisionForm
+                action={action}
+                actingAs={stageDepartment(request)}
+                requestStatus={request.status}
+                isAdmin
+                contractTicketAction={contractTicketAction}
+              />
             </>
           ) : (
             <Alert kind="info">

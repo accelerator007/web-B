@@ -8,6 +8,7 @@ const LIMITS: Record<string, number> = {
   pending_departments: 3,
   pending_finance: 2,
   pending_investment: 3,
+  pending_payment: 3,
 };
 
 export default async function ReportsPage() {

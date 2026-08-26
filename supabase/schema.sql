@@ -32,7 +32,7 @@ create index if not exists employees_status_idx     on public.employees(status);
 
 -- ---------------------------------------------------------------- الطلبات
 -- type:   new (استثمار جديد) | renewal (تجديد عقد) | waiver (تنازل) | cancellation (إلغاء عقد)
--- status: pending_departments | pending_finance | pending_investment | approved | rejected
+-- status: pending_departments | pending_finance | pending_investment | pending_payment | approved | rejected
 create table if not exists public.requests (
   id                uuid primary key default gen_random_uuid(),
   request_number    text not null unique,
@@ -48,7 +48,7 @@ create table if not exists public.requests (
   citizen_notes     text,
 
   status            text not null default 'pending_departments'
-                    check (status in ('pending_departments','pending_finance','pending_investment','approved','rejected')),
+                    check (status in ('pending_departments','pending_finance','pending_investment','pending_payment','approved','rejected')),
 
   -- قرارات الأقسام الفنية والرقابة الصحية والغذائية
   technical_decision   text check (technical_decision in ('approved','rejected')),

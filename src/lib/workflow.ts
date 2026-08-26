@@ -9,22 +9,23 @@ import type { SessionUser } from './auth';
 export function inboxFilter(department: Department) {
   switch (department) {
     case 'technical':
-      return { status: 'pending_departments', nullColumn: 'technical_decision' as const };
+      return { statuses: ['pending_departments'], nullColumn: 'technical_decision' as const };
     case 'health':
-      return { status: 'pending_departments', nullColumn: 'health_decision' as const };
+      return { statuses: ['pending_departments'], nullColumn: 'health_decision' as const };
     case 'finance':
-      return { status: 'pending_finance', nullColumn: null };
+      return { statuses: ['pending_finance', 'pending_payment'], nullColumn: null };
     case 'investment':
-      return { status: 'pending_investment', nullColumn: null };
+      return { statuses: ['pending_investment'], nullColumn: null };
     default:
-      return { status: null, nullColumn: null };
+      return { statuses: [], nullColumn: null };
   }
 }
 
 export async function fetchInbox(department: Department, limit = 100) {
   const f = inboxFilter(department);
   let q = db().from('requests').select('*').order('created_at', { ascending: true }).limit(limit);
-  if (f.status) q = q.eq('status', f.status);
+  if (f.statuses.length === 1) q = q.eq('status', f.statuses[0]);
+  else if (f.statuses.length > 1) q = q.in('status', f.statuses);
   if (f.nullColumn) q = q.is(f.nullColumn, null);
   const { data } = await q;
   return (data ?? []) as RequestRow[];
@@ -39,7 +40,7 @@ export function canDecide(user: SessionUser, r: RequestRow): boolean {
     case 'health':
       return r.status === 'pending_departments' && !r.health_decision;
     case 'finance':
-      return r.status === 'pending_finance';
+      return r.status === 'pending_finance' || r.status === 'pending_payment';
     case 'investment':
       return r.status === 'pending_investment';
     default:
@@ -55,7 +56,7 @@ export function canViewRequest(user: SessionUser, r: RequestRow): boolean {
     case 'health':
       return true;
     case 'finance':
-      return Boolean(r.finance_at) || ['pending_finance', 'pending_investment', 'approved'].includes(r.status);
+      return Boolean(r.finance_at) || ['pending_finance', 'pending_investment', 'pending_payment', 'approved'].includes(r.status);
     case 'investment':
       return Boolean(r.investment_at) || ['pending_investment', 'approved'].includes(r.status);
     default:
@@ -75,7 +76,8 @@ type DecisionInput = {
 
 /**
  * تطبيق قرار قسم على الطلب وتحريكه إلى المرحلة التالية.
- * المسار: (الفنية + الرقابة الصحية) ← المالية ← دائرة الاستثمار.
+ * المسار: (الفنية + الرقابة الصحية) ← المالية للدراسة ← دائرة الاستثمار
+ * ← المالية للدفع ← الاعتماد النهائي.
  */
 export async function applyDecision(input: DecisionInput): Promise<{ error?: string; ok?: boolean }> {
   const { request: r, user, actingAs, decision, notes } = input;
@@ -110,22 +112,25 @@ export async function applyDecision(input: DecisionInput): Promise<{ error?: str
       if (otherDecision === 'approved') patch.status = 'pending_finance';
     }
   } else if (actingAs === 'finance') {
-    if (r.status !== 'pending_finance') return { error: 'الطلب ليس في مرحلة الشؤون المالية' };
+    if (r.status !== 'pending_finance' && r.status !== 'pending_payment')
+      return { error: 'الطلب ليس في مرحلة الشؤون المالية' };
 
     patch.finance_notes = notes || null;
     patch.finance_by_name = user.full_name;
     patch.finance_by_number = user.employee_number;
     patch.finance_at = now;
-    patch.payment_status = input.payment?.status ?? (decision === 'approved' ? 'paid' : 'unpaid');
-    patch.payment_amount = input.payment?.amount ?? null;
-    patch.payment_reference = input.payment?.reference ?? null;
 
     if (decision === 'rejected') {
       Object.assign(patch, rejectPatch());
-    } else {
-      if (patch.payment_status === 'unpaid')
-        return { error: 'لا يمكن تحويل الطلب لدائرة الاستثمار قبل تأكيد الدفع أو الإعفاء' };
+    } else if (r.status === 'pending_finance') {
+      // المرحلة الأولى للمالية هي دراسة الطلب فقط، قبل عرضه على دائرة الاستثمار.
       patch.status = 'pending_investment';
+    } else {
+      // بعد موافقة الاستثمار يعود الطلب للمالية لاستكمال الدفع.
+      patch.payment_status = input.payment?.status ?? 'unpaid';
+      patch.payment_amount = input.payment?.amount ?? null;
+      patch.payment_reference = input.payment?.reference ?? null;
+      if (patch.payment_status === 'paid' || patch.payment_status === 'exempt') patch.status = 'approved';
     }
   } else if (actingAs === 'investment') {
     if (r.status !== 'pending_investment') return { error: 'الطلب ليس في مرحلة دائرة الاستثمار' };
@@ -134,7 +139,7 @@ export async function applyDecision(input: DecisionInput): Promise<{ error?: str
     patch.investment_by_name = user.full_name;
     patch.investment_by_number = user.employee_number;
     patch.investment_at = now;
-    patch.status = decision === 'approved' ? 'approved' : 'rejected';
+    patch.status = decision === 'approved' ? 'pending_payment' : 'rejected';
     if (decision === 'rejected') Object.assign(patch, rejectPatch());
   } else {
     return { error: 'قسم غير مصرّح له باتخاذ قرار' };
@@ -182,10 +187,10 @@ export async function applyDecision(input: DecisionInput): Promise<{ error?: str
     request_id: r.id,
     department: actingAs,
     action:
-      actingAs === 'finance' && decision === 'approved'
+      actingAs === 'finance' && r.status === 'pending_payment' && decision === 'approved'
         ? String(patch.payment_status) === 'exempt'
           ? 'exempt'
-          : 'paid'
+          : String(patch.payment_status)
         : decision,
     notes: notes || null,
     employee_id: user.id,
@@ -199,17 +204,22 @@ export async function applyDecision(input: DecisionInput): Promise<{ error?: str
   if (nextStatus === 'pending_finance' && ownsTransition) {
     await notifyDepartment({
       department: 'finance',
-      title: 'طلب محوّل إلى الشؤون المالية',
-      body: `${summary}: اعتمدته الشؤون الفنية والرقابة الغذائية والصحية، وينتظر إجراءات الدفع.`,
+      title: 'طلب محوّل إلى الشؤون المالية للدراسة',
+      body: `${summary}: اعتمدته الشؤون الفنية والرقابة الغذائية والصحية، وينتظر دراسة الشؤون المالية.`,
       requestId: r.id,
     });
   } else if (nextStatus === 'pending_investment' && ownsTransition) {
     await notifyDepartment({
       department: 'investment',
       title: 'طلب محوّل إلى دائرة الاستثمار',
-      body: `${summary}: اكتملت الإجراءات المالية (${
-        patch.payment_status === 'exempt' ? 'معفى من الرسوم' : 'تم الدفع'
-      })، وينتظر الاعتماد النهائي.`,
+      body: `${summary}: اكتملت دراسة الشؤون المالية، وينتظر موافقة دائرة الاستثمار.`,
+      requestId: r.id,
+    });
+  } else if (nextStatus === 'pending_payment' && ownsTransition) {
+    await notifyDepartment({
+      department: 'finance',
+      title: 'طلب معتمد من دائرة الاستثمار بانتظار الدفع',
+      body: `${summary}: وافقت دائرة الاستثمار، وأُعيد الطلب للشؤون المالية لاستكمال الدفع.`,
       requestId: r.id,
     });
   } else if (nextStatus === 'rejected' && ownsTransition) {

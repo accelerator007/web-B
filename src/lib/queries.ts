@@ -34,13 +34,14 @@ export async function searchRequests(
 
   if (params.scope === 'inbox' && opts.department) {
     const f = inboxFilter(opts.department);
-    if (f.status) q = q.eq('status', f.status);
+    if (f.statuses.length === 1) q = q.eq('status', f.statuses[0]);
+    else if (f.statuses.length > 1) q = q.in('status', f.statuses);
     if (f.nullColumn) q = q.is(f.nullColumn, null);
   }
 
   // الدوائر اللاحقة لا ترى الطلب قبل وصوله الفعلي إلى مرحلتها.
   if (opts.department === 'finance') {
-    q = q.or('finance_at.not.is.null,status.in.(pending_finance,pending_investment,approved)');
+    q = q.or('finance_at.not.is.null,status.in.(pending_finance,pending_investment,pending_payment,approved)');
   } else if (opts.department === 'investment') {
     q = q.or('investment_at.not.is.null,status.in.(pending_investment,approved)');
   }

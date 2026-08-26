@@ -4,6 +4,7 @@ export type RequestStatus =
   | 'pending_departments'
   | 'pending_finance'
   | 'pending_investment'
+  | 'pending_payment'
   | 'approved'
   | 'rejected';
 
@@ -31,8 +32,9 @@ export const REQUEST_TYPE_SHORT: Record<RequestType, string> = {
 
 export const STATUS_LABELS: Record<RequestStatus, string> = {
   pending_departments: 'قيد الدراسة لدى الشؤون الفنية والرقابة الصحية',
-  pending_finance: 'محوّل إلى الشؤون المالية',
-  pending_investment: 'محوّل إلى دائرة الاستثمار',
+  pending_finance: 'قيد الدراسة لدى الشؤون المالية',
+  pending_investment: 'قيد الدراسة لدى دائرة الاستثمار',
+  pending_payment: 'بانتظار استكمال الدفع لدى الشؤون المالية',
   approved: 'معتمد ومكتمل',
   rejected: 'مرفوض',
 };
@@ -41,6 +43,7 @@ export const STATUS_COLORS: Record<RequestStatus, string> = {
   pending_departments: 'bg-amber-50 text-amber-800 ring-amber-200',
   pending_finance: 'bg-sky-50 text-sky-800 ring-sky-200',
   pending_investment: 'bg-indigo-50 text-indigo-800 ring-indigo-200',
+  pending_payment: 'bg-orange-50 text-orange-800 ring-orange-200',
   approved: 'bg-emerald-50 text-emerald-800 ring-emerald-200',
   rejected: 'bg-rose-50 text-rose-800 ring-rose-200',
 };
