@@ -5,7 +5,7 @@ import { ApplyForm } from '@/components/apply-form';
 import { REQUEST_TYPES, type RequestType } from '@/lib/constants';
 import { createUploadTicketAction, submitRequest } from './actions';
 
-const VALID: RequestType[] = ['new', 'renewal', 'waiver'];
+const VALID: RequestType[] = ['new', 'renewal', 'waiver', 'cancellation'];
 
 export function generateStaticParams() {
   return VALID.map((type) => ({ type }));

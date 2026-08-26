@@ -6,18 +6,14 @@ import { DEPARTMENTS } from '@/lib/constants';
 import { RequestsTable } from '@/components/requests-table';
 import type { RequestRow } from '@/lib/types';
 
-export const dynamic = 'force-dynamic';
-
 export default async function DashboardPage() {
   const user = await requireUser();
   const supa = db();
 
-  const inbox = user.role === 'admin' ? [] : await fetchInbox(user.department);
-
-  const { data: allRows } = await supa
-    .from('requests')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const [inbox, { data: allRows }] = await Promise.all([
+    user.role === 'admin' ? Promise.resolve([] as RequestRow[]) : fetchInbox(user.department),
+    supa.from('requests').select('*').order('created_at', { ascending: false }),
+  ]);
   const visible = ((allRows ?? []) as RequestRow[]).filter((r) => canViewRequest(user, r));
   const statuses = ['pending_departments', 'pending_finance', 'pending_investment', 'approved', 'rejected'] as const;
   const counts = statuses.map((status) => visible.filter((r) => r.status === status).length);

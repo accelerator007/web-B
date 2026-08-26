@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
+import { cache } from 'react';
 import { db } from './supabase';
 import type { Department } from './constants';
 
@@ -73,7 +74,11 @@ export async function getSession(): Promise<SessionUser | null> {
 }
 
 /** يتحقق من الجلسة ومن أن الحساب ما زال مفعّلاً في قاعدة البيانات */
-export async function requireUser(): Promise<SessionUser> {
+/**
+ * React cache prevents the layout and the page from validating the same session
+ * with two identical Supabase round-trips during a single render.
+ */
+export const requireUser = cache(async (): Promise<SessionUser> => {
   const session = await getSession();
   if (!session) redirect('/login');
 
@@ -96,13 +101,13 @@ export async function requireUser(): Promise<SessionUser> {
     department: data.department as Department,
     role: data.role as 'employee' | 'admin',
   };
-}
+});
 
-export async function requireAdmin(): Promise<SessionUser> {
+export const requireAdmin = cache(async (): Promise<SessionUser> => {
   const user = await requireUser();
   if (user.role !== 'admin') redirect('/dashboard?error=forbidden');
   return user;
-}
+});
 
 /** تحقق من كلمة مرور الأدمن (يُطلب قبل العمليات الحسّاسة) */
 export async function confirmAdminPassword(adminId: string, password: string) {

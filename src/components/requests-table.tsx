@@ -12,7 +12,7 @@ export function RequestsTable({
 }) {
   return (
     <div className="table-wrap">
-      <table className="min-w-full divide-y divide-slate-200">
+      <table className="responsive-table min-w-full divide-y divide-slate-200">
         <thead className="bg-slate-50">
           <tr>
             <th className="th">رقم الطلب</th>
@@ -27,31 +27,31 @@ export function RequestsTable({
         </thead>
         <tbody className="divide-y divide-slate-100">
           {rows.map((r) => (
-            <tr key={r.id} className="hover:bg-slate-50">
-              <td className="td font-bold text-brand-700" dir="ltr">
+            <tr key={r.id} className="transition-colors duration-150 hover:bg-slate-50">
+              <td className="td font-bold text-brand-700" dir="ltr" data-label="رقم الطلب">
                 {r.request_number}
               </td>
-              <td className="td">{REQUEST_TYPE_SHORT[r.type]}</td>
-              <td className="td">{r.full_name}</td>
-              <td className="td" dir="ltr">
+              <td className="td" data-label="نوع الطلب">{REQUEST_TYPE_SHORT[r.type]}</td>
+              <td className="td" data-label="مقدّم الطلب">{r.full_name}</td>
+              <td className="td" dir="ltr" data-label="الرقم المدني">
                 {r.civil_number}
               </td>
-              <td className="td" dir="ltr">
+              <td className="td" dir="ltr" data-label="الهاتف">
                 {r.phone}
               </td>
-              <td className="td">
+              <td className="td" data-label="الحالة">
                 <StatusBadge status={r.status} />
               </td>
-              <td className="td text-slate-500">{formatDate(r.created_at)}</td>
-              <td className="td">
-                <Link href={`${basePath}/${r.id}`} className="font-bold text-brand-700 hover:underline">
-                  عرض
+              <td className="td text-slate-500" data-label="تاريخ التقديم">{formatDate(r.created_at)}</td>
+              <td className="td" data-label="">
+                <Link href={`${basePath}/${r.id}`} className="btn-primary !min-h-10 !px-4 !py-2 !text-sm">
+                  عرض التفاصيل
                 </Link>
               </td>
             </tr>
           ))}
           {rows.length === 0 && (
-            <tr>
+              <tr className="empty-row">
               <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-500">
                 لا توجد طلبات لعرضها
               </td>

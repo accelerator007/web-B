@@ -18,12 +18,12 @@ export function EmployeeRowActions({
   deleteAction: Action;
 }) {
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
       {/* تعديل البيانات */}
       <DangerDialog
         action={updateAction}
         triggerLabel="تعديل"
-        triggerClass="text-sm font-bold text-brand-700 hover:underline"
+        triggerClass="min-h-10 rounded-lg px-2 text-sm font-bold text-brand-700 transition-colors hover:bg-brand-50"
         title={`تعديل بيانات: ${employee.full_name}`}
         confirmLabel="حفظ التعديلات"
         confirmClass="btn-primary flex-1"
@@ -41,7 +41,7 @@ export function EmployeeRowActions({
           <label className="label">البريد الإلكتروني</label>
           <input name="email" type="email" dir="ltr" className="input" defaultValue={employee.email} required />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label className="label">القسم</label>
             <select name="department" className="input" defaultValue={employee.department}>
@@ -73,7 +73,7 @@ export function EmployeeRowActions({
       <DangerDialog
         action={passwordAction}
         triggerLabel="كلمة المرور"
-        triggerClass="text-sm font-bold text-slate-700 hover:underline"
+        triggerClass="min-h-10 rounded-lg px-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-100"
         title={`تغيير كلمة مرور: ${employee.full_name}`}
         description="سيتم إشعار الموظف بالبريد الإلكتروني بعد التغيير."
         confirmLabel="تغيير كلمة المرور"

@@ -6,54 +6,38 @@ import { formatDate } from '@/components/ui';
 import { DEPARTMENTS, REQUEST_TYPES, type RequestType } from '@/lib/constants';
 import type { RequestRow } from '@/lib/types';
 
-export const dynamic = 'force-dynamic';
-
-async function countWhere(column: string, value: string) {
-  const { count } = await db()
-    .from('requests')
-    .select('id', { count: 'exact', head: true })
-    .eq(column, value);
-  return count ?? 0;
-}
-
 export default async function AdminHome() {
   await requireAdmin();
   const supa = db();
 
-  const [
-    total,
-    pendingDepartments,
-    pendingFinance,
-    pendingInvestment,
-    approved,
-    rejected,
-    typeNew,
-    typeRenewal,
-    typeWaiver,
-  ] = await Promise.all([
-    supa.from('requests').select('id', { count: 'exact', head: true }).then((r) => r.count ?? 0),
-    countWhere('status', 'pending_departments'),
-    countWhere('status', 'pending_finance'),
-    countWhere('status', 'pending_investment'),
-    countWhere('status', 'approved'),
-    countWhere('status', 'rejected'),
-    countWhere('type', 'new'),
-    countWhere('type', 'renewal'),
-    countWhere('type', 'waiver'),
+  // Four parallel requests replace the previous two waves of 13 Supabase requests.
+  const [{ data: requestStats }, { data: employeeStats }, { data: latest }, { data: audit }] = await Promise.all([
+    supa.from('requests').select('status,type'),
+    supa.from('employees').select('status'),
+    supa.from('requests').select('*').order('created_at', { ascending: false }).limit(10),
+    supa.from('audit_log').select('id,action,actor_name,created_at').order('created_at', { ascending: false }).limit(8),
   ]);
 
-  const [{ count: employeesCount }, { count: pendingAccounts }, { data: latest }, { data: audit }] =
-    await Promise.all([
-      supa.from('employees').select('id', { count: 'exact', head: true }).eq('status', 'active'),
-      supa.from('employees').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-      supa.from('requests').select('*').order('created_at', { ascending: false }).limit(10),
-      supa.from('audit_log').select('*').order('created_at', { ascending: false }).limit(8),
-    ]);
+  const requests = requestStats ?? [];
+  const employees = employeeStats ?? [];
+  const total = requests.length;
+  const pendingDepartments = requests.filter((request) => request.status === 'pending_departments').length;
+  const pendingFinance = requests.filter((request) => request.status === 'pending_finance').length;
+  const pendingInvestment = requests.filter((request) => request.status === 'pending_investment').length;
+  const approved = requests.filter((request) => request.status === 'approved').length;
+  const rejected = requests.filter((request) => request.status === 'rejected').length;
+  const typeNew = requests.filter((request) => request.type === 'new').length;
+  const typeRenewal = requests.filter((request) => request.type === 'renewal').length;
+  const typeWaiver = requests.filter((request) => request.type === 'waiver').length;
+  const typeCancellation = requests.filter((request) => request.type === 'cancellation').length;
+  const employeesCount = employees.filter((employee) => employee.status === 'active').length;
+  const pendingAccounts = employees.filter((employee) => employee.status === 'pending').length;
 
   const byType: { type: RequestType; value: number }[] = [
     { type: 'new', value: typeNew },
     { type: 'renewal', value: typeRenewal },
     { type: 'waiver', value: typeWaiver },
+    { type: 'cancellation', value: typeCancellation },
   ];
 
   const cards = [
@@ -72,7 +56,7 @@ export default async function AdminHome() {
           <h1 className="text-2xl font-extrabold text-slate-900">لوحة تحكم إدارة النظام</h1>
           <p className="mt-1 text-sm text-slate-600">نظرة شاملة على الطلبات والموظفين.</p>
         </div>
-        {(pendingAccounts ?? 0) > 0 && (
+        {pendingAccounts > 0 && (
           <Link href="/admin/employees/requests" className="btn-primary !py-2 !text-sm">
             طلبات حسابات بانتظار الاعتماد ({pendingAccounts})
           </Link>
@@ -125,11 +109,11 @@ export default async function AdminHome() {
           <div className="mt-6 border-t border-slate-100 pt-4 text-sm">
             <div className="flex justify-between">
               <span className="text-slate-500">الموظفون المفعّلون</span>
-              <span className="font-bold text-slate-800">{employeesCount ?? 0}</span>
+              <span className="font-bold text-slate-800">{employeesCount}</span>
             </div>
             <div className="mt-2 flex justify-between">
               <span className="text-slate-500">طلبات حسابات معلّقة</span>
-              <span className="font-bold text-slate-800">{pendingAccounts ?? 0}</span>
+              <span className="font-bold text-slate-800">{pendingAccounts}</span>
             </div>
           </div>
         </section>

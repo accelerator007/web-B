@@ -4,7 +4,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'بوابة استثمار المواقع الحكومية — دائرة البلدية بالسويق',
   description:
-    'تقديم طلبات استثمار المواقع الحكومية وتجديد العقود والتنازل عنها إلكترونياً — دائرة البلدية بالسويق',
+    'تقديم طلبات استثمار المواقع الحكومية وتجديد العقود والتنازل عنها وإلغائها إلكترونياً — دائرة البلدية بالسويق',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

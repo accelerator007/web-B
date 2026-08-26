@@ -1,32 +1,23 @@
 import Link from 'next/link';
 import { requireUser } from '@/lib/auth';
-import { db } from '@/lib/supabase';
 import { DEPARTMENTS } from '@/lib/constants';
+import { countUnread } from '@/lib/notifications';
 import { logoutAction } from '@/app/(auth)/actions';
 import { Logo } from '@/components/ui';
 import { NavLink } from '@/components/nav-link';
 
-export const dynamic = 'force-dynamic';
-
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
-
-  const { count } = await db()
-    .from('notifications')
-    .select('id', { count: 'exact', head: true })
-    .eq('employee_id', user.id)
-    .eq('is_read', false);
-
-  const unread = count ?? 0;
+  const unread = await countUnread(user.id);
   const isAdmin = user.role === 'admin';
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
+    <div className="app-backdrop min-h-screen">
+      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,.02)] backdrop-blur-lg">
+        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-6">
             <Logo compact />
-            <span className="hidden rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600 md:block">
+            <span className="hidden rounded-full border border-brand-100 bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700 lg:block">
               {isAdmin ? 'إدارة النظام' : DEPARTMENTS[user.department]}
             </span>
           </div>
@@ -34,7 +25,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="flex items-center gap-3">
             <Link
               href="/dashboard/notifications"
-              className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100"
+              className="relative grid h-10 w-10 place-items-center rounded-xl text-slate-600 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-900"
               aria-label="الإشعارات"
             >
               <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -47,41 +38,46 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               )}
             </Link>
 
-            <div className="hidden text-left sm:block">
-              <div className="text-sm font-bold text-slate-800">{user.full_name}</div>
+            <div className="hidden border-r border-slate-200 pr-3 text-right sm:block">
+              <div className="max-w-40 truncate text-sm font-bold text-slate-800">{user.full_name}</div>
               <div dir="ltr" className="text-xs text-slate-500">
                 {user.employee_number}
               </div>
             </div>
 
             <form action={logoutAction}>
-              <button className="btn-ghost !px-3 !py-2 !text-sm" type="submit">
-                خروج
+              <button className="btn-ghost !h-10 !px-3 !py-2 !text-sm" type="submit">
+                <span className="hidden sm:inline">تسجيل الخروج</span>
+                <span className="sm:hidden">خروج</span>
               </button>
             </form>
           </div>
         </div>
 
-        <nav className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-2 pb-2 text-sm font-semibold">
-          <NavLink href="/dashboard">الرئيسية</NavLink>
-          <NavLink href="/dashboard/requests">الطلبات</NavLink>
-          <NavLink href="/dashboard/notifications">
-            الإشعارات{unread > 0 ? ` (${unread})` : ''}
-          </NavLink>
-          {isAdmin && (
-            <>
-              <span className="mx-2 my-1 w-px bg-slate-200" />
-              <NavLink href="/admin">لوحة الأدمن</NavLink>
-              <NavLink href="/admin/requests">إدارة الطلبات</NavLink>
-              <NavLink href="/admin/reports">التقارير والتصدير</NavLink>
-              <NavLink href="/admin/employees">الموظفون</NavLink>
-              <NavLink href="/admin/employees/requests">طلبات الحسابات</NavLink>
-            </>
-          )}
-        </nav>
+        <div className="border-t border-slate-100">
+          <nav className="mx-auto flex max-w-[1440px] gap-1.5 overflow-x-auto px-4 py-2 sm:px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <NavLink href="/dashboard">الرئيسية</NavLink>
+            <NavLink href="/dashboard/requests">الطلبات</NavLink>
+            <NavLink href="/dashboard/notifications">
+              الإشعارات{unread > 0 ? ` (${unread})` : ''}
+            </NavLink>
+            {isAdmin && (
+              <>
+                <span className="mx-1 my-1 hidden w-px shrink-0 bg-slate-200 sm:block" />
+                <NavLink href="/admin">لوحة الإدارة</NavLink>
+                <NavLink href="/admin/requests">إدارة الطلبات</NavLink>
+                <NavLink href="/admin/reports">التقارير</NavLink>
+                <NavLink href="/admin/employees">الموظفون</NavLink>
+                <NavLink href="/admin/employees/requests">طلبات الحسابات</NavLink>
+              </>
+            )}
+          </nav>
+        </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-8">{children}</main>
+      <main className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8 lg:py-10">
+        <div className="page-enter">{children}</div>
+      </main>
     </div>
   );
 }

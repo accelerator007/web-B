@@ -27,6 +27,17 @@ const SERVICES = [
     desc: 'التنازل عن موقع استثماري بعد إخلائه وتقديم المخالصة المالية.',
     color: 'bg-gold-600',
   },
+  {
+    type: 'cancellation' as const,
+    icon: (
+      <>
+        <path d="M8 7h8M8 12h5M4 5.5A2.5 2.5 0 0 1 6.5 3H15l5 5v10.5A2.5 2.5 0 0 1 17.5 21h-11A2.5 2.5 0 0 1 4 18.5z" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="m10 15 4 4m0-4-4 4" strokeLinecap="round" />
+      </>
+    ),
+    desc: 'إلغاء عقد استثماري قائم بعد إخلاء الموقع وتقديم المخالصة المالية.',
+    color: 'bg-rose-700',
+  },
 ];
 
 export default function HomePage() {
@@ -62,17 +73,17 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* الخدمات الثلاث */}
+        {/* الخدمات المتاحة */}
         <section id="services" className="mx-auto max-w-6xl px-4 py-14">
           <h2 className="text-xl font-extrabold text-slate-900">الخدمات المتاحة للمواطن</h2>
           <p className="mt-1 text-sm text-slate-500">اختر الخدمة المطلوبة لبدء تعبئة النموذج.</p>
 
-          <div className="mt-7 grid gap-5 md:grid-cols-3">
+          <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {SERVICES.map((s) => (
               <Link
                 key={s.type}
                 href={`/apply/${s.type}`}
-                className="card group flex flex-col p-6 transition hover:-translate-y-0.5 hover:border-brand-300"
+                className="card group flex flex-col p-5 transition-[transform,border-color,box-shadow] duration-150 hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg sm:p-6"
               >
                 <span className={`grid h-12 w-12 place-items-center rounded-xl text-white ${s.color}`}>
                   <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -96,7 +107,7 @@ export default function HomePage() {
 
                 <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-brand-700">
                   بدء الطلب
-                  <svg viewBox="0 0 24 24" className="h-4 w-4 transition group-hover:-translate-x-1" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-1" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M19 12H5M11 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </span>

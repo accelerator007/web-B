@@ -1,5 +1,5 @@
 export type Department = 'technical' | 'health' | 'finance' | 'investment' | 'admin';
-export type RequestType = 'new' | 'renewal' | 'waiver';
+export type RequestType = 'new' | 'renewal' | 'waiver' | 'cancellation';
 export type RequestStatus =
   | 'pending_departments'
   | 'pending_finance'
@@ -19,12 +19,14 @@ export const REQUEST_TYPES: Record<RequestType, string> = {
   new: 'طلب استثمار موقع جديد',
   renewal: 'تجديد عقد استثمار سابق',
   waiver: 'تنازل عن موقع استثماري',
+  cancellation: 'إلغاء عقد استثماري',
 };
 
 export const REQUEST_TYPE_SHORT: Record<RequestType, string> = {
   new: 'استثمار جديد',
   renewal: 'تجديد عقد',
   waiver: 'تنازل',
+  cancellation: 'إلغاء عقد',
 };
 
 export const STATUS_LABELS: Record<RequestStatus, string> = {
@@ -63,6 +65,11 @@ export const ATTACHMENTS: Record<RequestType, AttachmentField[]> = {
   ],
   waiver: [
     { key: 'waiver_letter', label: 'رسالة التنازل', hint: 'ملف PDF أو صورة', required: true },
+    { key: 'site_photo_after', label: 'صورة الموقع بعد الإخلاء', hint: 'صورة أو ملف PDF', required: true },
+    { key: 'clearance', label: 'المخالصة المالية', hint: 'ملف PDF أو صورة', required: true },
+  ],
+  cancellation: [
+    { key: 'cancellation_letter', label: 'رسالة إلغاء العقد', hint: 'ملف PDF أو صورة', required: true },
     { key: 'site_photo_after', label: 'صورة الموقع بعد الإخلاء', hint: 'صورة أو ملف PDF', required: true },
     { key: 'clearance', label: 'المخالصة المالية', hint: 'ملف PDF أو صورة', required: true },
   ],
