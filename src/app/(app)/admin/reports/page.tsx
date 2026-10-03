@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { requireAdmin } from '@/lib/auth';
-import { db } from '@/lib/supabase';
+import { fetchAllRequestsForReport } from '@/lib/queries';
 import { REQUEST_TYPE_SHORT, STATUS_LABELS } from '@/lib/constants';
 import type { RequestRow } from '@/lib/types';
 
@@ -13,12 +13,7 @@ const LIMITS: Record<string, number> = {
 
 export default async function ReportsPage() {
   await requireAdmin();
-  const { data } = await db()
-    .from('requests')
-    .select('id,request_number,type,status,created_at,updated_at')
-    .order('created_at', { ascending: false });
-
-  const rows = (data ?? []) as RequestRow[];
+  const rows = await fetchAllRequestsForReport('id,request_number,type,status,created_at,updated_at');
   const finished = rows.filter((row) => row.status === 'approved' || row.status === 'rejected');
   const average = finished.length
     ? finished.reduce(

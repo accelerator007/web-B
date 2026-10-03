@@ -27,8 +27,20 @@ export async function fetchInbox(department: Department, limit = 100) {
   if (f.statuses.length === 1) q = q.eq('status', f.statuses[0]);
   else if (f.statuses.length > 1) q = q.in('status', f.statuses);
   if (f.nullColumn) q = q.is(f.nullColumn, null);
-  const { data } = await q;
+  const { data, error } = await q;
+  if (error) throw error;
   return (data ?? []) as RequestRow[];
+}
+
+export async function countInbox(department: Department) {
+  const f = inboxFilter(department);
+  let q = db().from('requests').select('id', { count: 'exact', head: true });
+  if (f.statuses.length === 1) q = q.eq('status', f.statuses[0]);
+  else if (f.statuses.length > 1) q = q.in('status', f.statuses);
+  if (f.nullColumn) q = q.is(f.nullColumn, null);
+  const { count, error } = await q;
+  if (error) throw error;
+  return count ?? 0;
 }
 
 /** هل يستطيع هذا الموظف اتخاذ قرار على هذا الطلب الآن؟ */

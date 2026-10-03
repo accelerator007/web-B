@@ -12,6 +12,7 @@ export type EmployeeRow = {
   created_at: string;
   approved_at: string | null;
   last_login_at: string | null;
+  session_version: number;
 };
 
 export type RequestRow = {

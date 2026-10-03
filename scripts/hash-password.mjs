@@ -22,6 +22,7 @@ console.log(hash);
 console.log('\nلتغيير كلمة مرور الأدمن، شغّل في Supabase SQL Editor:');
 console.log(`
 update public.employees
-   set password_hash = '${hash}'
+   set password_hash = '${hash}',
+       session_version = session_version + 1
  where employee_number = '1001';
 `);

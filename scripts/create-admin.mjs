@@ -5,7 +5,7 @@
  * التشغيل:
  *   npm run seed:admin
  * أو مع تمرير القيم مباشرة:
- *   npm run seed:admin -- --number=1001 --name="سعيد محمد الهنائي" --email=admin@suwaiq.gov.om --password=Admin12345
+ *   npm run seed:admin -- --number=1001 --name="اسم المدير" --email=admin@example.gov.om --password="<كلمة فريدة وقوية>"
  */
 import { readFileSync, existsSync } from 'node:fs';
 import { createInterface } from 'node:readline/promises';
@@ -67,10 +67,14 @@ if (existing) {
       role: 'admin',
       department: 'admin',
       status: 'active',
-      password_hash: bcrypt.hashSync(password, 10),
     })
     .eq('id', existing.id);
   if (error) throw error;
+  const { error: passwordError } = await supa.rpc('set_employee_password', {
+    p_employee_id: existing.id,
+    p_password_hash: bcrypt.hashSync(password, 10),
+  });
+  if (passwordError) throw passwordError;
   console.log('✅ تم تحديث حساب الأدمن الحالي.');
 } else {
   const { error } = await supa.from('employees').insert({

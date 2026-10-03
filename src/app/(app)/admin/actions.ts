@@ -223,10 +223,10 @@ async function changeEmployeePasswordActionImpl(
   const { data: emp } = await db().from('employees').select('email').eq('id', id).maybeSingle();
   if (!emp) return { error: 'الموظف غير موجود' };
 
-  const { error: updateError } = await db()
-    .from('employees')
-    .update({ password_hash: await hashPassword(password) })
-    .eq('id', id);
+  const { error: updateError } = await db().rpc('set_employee_password', {
+    p_employee_id: id,
+    p_password_hash: await hashPassword(password),
+  });
   if (updateError) return { error: `تعذّر تغيير كلمة المرور: ${updateError.message}` };
 
   await notifyEmployee({

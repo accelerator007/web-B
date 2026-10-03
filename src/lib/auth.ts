@@ -17,11 +17,12 @@ export type SessionUser = {
   email: string;
   department: Department;
   role: 'employee' | 'admin';
+  session_version: number;
 };
 
 function secret() {
   const s = process.env.SESSION_SECRET;
-  if (!s || s.length < 16) {
+  if (!s || s.length < 32) {
     throw new Error('SESSION_SECRET غير معرّف أو قصير جداً (32 حرفاً على الأقل) في .env.local');
   }
   return new TextEncoder().encode(s);
@@ -67,6 +68,7 @@ export async function getSession(): Promise<SessionUser | null> {
       email: payload.email as string,
       department: payload.department as Department,
       role: payload.role as 'employee' | 'admin',
+      session_version: Number(payload.session_version),
     };
   } catch {
     return null;
@@ -77,11 +79,16 @@ export async function getSession(): Promise<SessionUser | null> {
 async function refreshSessionUser(session: SessionUser): Promise<SessionUser | null> {
   const { data } = await db()
     .from('employees')
-    .select('id, status, role, department, full_name, employee_number, email')
+    .select('id, status, role, department, full_name, employee_number, email, session_version')
     .eq('id', session.id)
     .maybeSingle();
 
-  if (!data || data.status !== 'active') return null;
+  if (
+    !data ||
+    data.status !== 'active' ||
+    !Number.isInteger(session.session_version) ||
+    data.session_version !== session.session_version
+  ) return null;
 
   return {
     id: data.id,
@@ -90,6 +97,7 @@ async function refreshSessionUser(session: SessionUser): Promise<SessionUser | n
     email: data.email,
     department: data.department as Department,
     role: data.role as 'employee' | 'admin',
+    session_version: data.session_version,
   };
 }
 
@@ -98,7 +106,6 @@ export async function getActiveSession(): Promise<SessionUser | null> {
   return session ? refreshSessionUser(session) : null;
 }
 
-/** يتحقق من الجلسة ومن أن الحساب ما زال مفعّلاً في قاعدة البيانات */
 /**
  * React cache prevents the layout and the page from validating the same session
  * with two identical Supabase round-trips during a single render.

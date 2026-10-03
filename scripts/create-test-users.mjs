@@ -15,7 +15,8 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!url || !key) throw new Error('إعدادات Supabase ناقصة في .env.local');
 
-const password = process.argv.find((value) => value.startsWith('--password='))?.split('=').slice(1).join('=') || 'Test@2026';
+const password = process.argv.find((value) => value.startsWith('--password='))?.split('=').slice(1).join('=');
+if (!password) throw new Error('مرّر كلمة مرور فريدة عبر --password=<password>');
 if (password.length < 8) throw new Error('كلمة المرور التجريبية يجب أن تكون ٨ خانات على الأقل');
 
 const users = [
@@ -42,11 +43,23 @@ for (const user of users) {
     approved_at: new Date().toISOString(),
     reject_reason: null,
   };
-  const { error } = existing
-    ? await supa.from('employees').update(values).eq('id', existing.id)
-    : await supa.from('employees').insert(values);
+  let error;
+  if (existing) {
+    const { password_hash, ...profile } = values;
+    const profileResult = await supa.from('employees').update(profile).eq('id', existing.id);
+    if (profileResult.error) error = profileResult.error;
+    else {
+      const passwordResult = await supa.rpc('set_employee_password', {
+        p_employee_id: existing.id,
+        p_password_hash: password_hash,
+      });
+      error = passwordResult.error;
+    }
+  } else {
+    ({ error } = await supa.from('employees').insert(values));
+  }
   if (error) throw error;
   console.log(`✅ ${user.employee_number} — ${user.full_name}`);
 }
 
-console.log(`\nكلمة المرور المشتركة: ${password}`);
+console.log('\n✅ تم ضبط كلمة المرور التي مررتها دون طباعتها في السجل.');

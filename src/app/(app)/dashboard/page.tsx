@@ -1,23 +1,24 @@
 import Link from 'next/link';
 import { requireUser } from '@/lib/auth';
-import { db } from '@/lib/supabase';
-import { canViewRequest, fetchInbox } from '@/lib/workflow';
-import { DEPARTMENTS } from '@/lib/constants';
+import { countInbox, fetchInbox } from '@/lib/workflow';
+import { countRequests, searchRequests } from '@/lib/queries';
+import { DEPARTMENTS, type RequestStatus } from '@/lib/constants';
 import { RequestsTable } from '@/components/requests-table';
 import type { RequestRow } from '@/lib/types';
 
 export default async function DashboardPage() {
   const user = await requireUser();
-  const supa = db();
-
-  const [inbox, { data: allRows }] = await Promise.all([
+  const statuses: RequestStatus[] = [
+    'pending_departments', 'pending_finance', 'pending_investment',
+    'pending_payment', 'approved', 'rejected',
+  ];
+  const department = user.role === 'admin' ? undefined : user.department;
+  const [inbox, inboxCount, counts, latest] = await Promise.all([
     user.role === 'admin' ? Promise.resolve([] as RequestRow[]) : fetchInbox(user.department),
-    supa.from('requests').select('*').order('created_at', { ascending: false }),
+    user.role === 'admin' ? Promise.resolve(0) : countInbox(user.department),
+    Promise.all(statuses.map((status) => countRequests({ status, department }))),
+    searchRequests({}, { department, limit: 8 }),
   ]);
-  const visible = ((allRows ?? []) as RequestRow[]).filter((r) => canViewRequest(user, r));
-  const statuses = ['pending_departments', 'pending_finance', 'pending_investment', 'pending_payment', 'approved', 'rejected'] as const;
-  const counts = statuses.map((status) => visible.filter((r) => r.status === status).length);
-  const latest = visible.slice(0, 8);
 
   const stats = [
     { label: 'قيد دراسة الأقسام', value: counts[0], tone: 'text-amber-700 bg-amber-50' },
@@ -50,7 +51,7 @@ export default async function DashboardPage() {
         <section>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-lg font-extrabold text-slate-900">
-              الطلبات الواردة لقسمك ({inbox.length})
+              الطلبات الواردة لقسمك ({inboxCount})
             </h2>
             <Link href="/dashboard/requests" className="text-sm font-bold text-brand-700 hover:underline">
               عرض كل الطلبات

@@ -24,11 +24,42 @@ create table if not exists public.employees (
   updated_at      timestamptz not null default now(),
   approved_at     timestamptz,
   approved_by     uuid references public.employees(id) on delete set null,
-  last_login_at   timestamptz
+  last_login_at   timestamptz,
+  session_version integer not null default 1 check (session_version > 0)
 );
 
 create index if not exists employees_department_idx on public.employees(department);
 create index if not exists employees_status_idx     on public.employees(status);
+
+-- تغيير كلمة المرور وزيادة إصدار الجلسة في معاملة واحدة.
+create or replace function public.set_employee_password(
+  p_employee_id uuid,
+  p_password_hash text
+)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  next_version integer;
+begin
+  update public.employees
+  set password_hash = p_password_hash,
+      session_version = session_version + 1,
+      updated_at = now()
+  where id = p_employee_id
+  returning session_version into next_version;
+
+  if next_version is null then
+    raise exception 'employee not found';
+  end if;
+  return next_version;
+end;
+$$;
+
+revoke all on function public.set_employee_password(uuid, text) from public, anon, authenticated;
+grant execute on function public.set_employee_password(uuid, text) to service_role;
 
 -- ---------------------------------------------------------------- الطلبات
 -- type:   new (إيجار جديد) | renewal (تجديد عقد) | waiver (تنازل) | cancellation (إلغاء عقد)
