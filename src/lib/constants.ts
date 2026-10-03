@@ -9,10 +9,10 @@ export type RequestStatus =
   | 'rejected';
 
 export const DEPARTMENTS: Record<Department, string> = {
-  technical: 'قسم الشؤون الفنية',
-  health: 'قسم الرقابة الغذائية والصحية',
-  finance: 'قسم الشؤون المالية',
-  investment: 'دائرة الاستثمار',
+  technical: 'قسم الرقابة والتراخيص الصحية',
+  health: 'قسم الرقابة والتراخيص الغذائية',
+  finance: 'قسم الشؤون الإدارية والمالية',
+  investment: 'قسم الاستثمار وتنمية الإيرادات',
   admin: 'إدارة النظام',
 };
 
@@ -31,10 +31,10 @@ export const REQUEST_TYPE_SHORT: Record<RequestType, string> = {
 };
 
 export const STATUS_LABELS: Record<RequestStatus, string> = {
-  pending_departments: 'قيد الدراسة لدى الشؤون الفنية والرقابة الصحية',
-  pending_finance: 'قيد الدراسة لدى الشؤون المالية',
-  pending_investment: 'قيد الدراسة لدى دائرة الاستثمار',
-  pending_payment: 'بانتظار استكمال الدفع لدى الشؤون المالية',
+  pending_departments: 'قيد الدراسة لدى الرقابة والتراخيص الصحية والغذائية',
+  pending_finance: 'قيد الدراسة لدى الشؤون الإدارية والمالية',
+  pending_investment: 'قيد الدراسة لدى قسم الاستثمار وتنمية الإيرادات',
+  pending_payment: 'بانتظار استكمال الدفع لدى الشؤون الإدارية والمالية',
   approved: 'معتمد ومكتمل',
   rejected: 'مرفوض',
 };
@@ -81,7 +81,7 @@ export const ATTACHMENTS: Record<RequestType, AttachmentField[]> = {
 
 export const ATTACHMENT_LABELS: Record<string, string> = Object.values(ATTACHMENTS)
   .flat()
-  .reduce((acc, f) => ({ ...acc, [f.key]: f.label }), { final_contract: 'العقد المعتمد من دائرة الاستثمار' } as Record<string, string>);
+  .reduce((acc, f) => ({ ...acc, [f.key]: f.label }), { final_contract: 'العقد المعتمد من قسم الاستثمار وتنمية الإيرادات' } as Record<string, string>);
 
 export const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 ميجابايت
 export const ALLOWED_MIME = [

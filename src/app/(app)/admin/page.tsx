@@ -47,8 +47,8 @@ export default async function AdminHome() {
   const cards = [
     { label: 'إجمالي الطلبات', value: total, tone: 'bg-slate-900 text-white' },
     { label: 'قيد دراسة الأقسام', value: pendingDepartments, tone: 'bg-amber-50 text-amber-800' },
-    { label: 'قيد دراسة المالية', value: pendingFinance, tone: 'bg-sky-50 text-sky-800' },
-    { label: 'لدى دائرة الاستثمار', value: pendingInvestment, tone: 'bg-indigo-50 text-indigo-800' },
+    { label: 'قيد دراسة الشؤون الإدارية والمالية', value: pendingFinance, tone: 'bg-sky-50 text-sky-800' },
+    { label: 'لدى قسم الاستثمار وتنمية الإيرادات', value: pendingInvestment, tone: 'bg-indigo-50 text-indigo-800' },
     { label: 'بانتظار الدفع', value: pendingPayment, tone: 'bg-orange-50 text-orange-800' },
     { label: 'معتمدة', value: approved, tone: 'bg-emerald-50 text-emerald-800' },
     { label: 'مرفوضة', value: rejected, tone: 'bg-rose-50 text-rose-800' },

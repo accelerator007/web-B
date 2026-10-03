@@ -32,7 +32,7 @@ export default async function ApplyPage({ params }: { params: Promise<{ type: st
 
         <h1 className="text-2xl font-extrabold text-slate-900">{REQUEST_TYPES[type]}</h1>
         <p className="mt-2 text-sm leading-7 text-slate-600">
-          يُحال الطلب بعد تقديمه مباشرة إلى قسم الشؤون الفنية وقسم الرقابة الغذائية والصحية للدراسة.
+          يُحال الطلب بعد تقديمه مباشرة إلى قسم الرقابة والتراخيص الصحية وقسم الرقابة والتراخيص الغذائية للدراسة.
         </p>
 
         <div className="mt-8">

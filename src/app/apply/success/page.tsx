@@ -23,7 +23,7 @@ export default function SuccessPage({
 
           <h1 className="mt-5 text-xl font-extrabold text-slate-900">تم استلام طلبك بنجاح</h1>
           <p className="mt-2 text-sm leading-7 text-slate-600">
-            تمت إحالة الطلب إلى قسم الشؤون الفنية وقسم الرقابة الغذائية والصحية للدراسة.
+            تمت إحالة الطلب إلى قسم الرقابة والتراخيص الصحية وقسم الرقابة والتراخيص الغذائية للدراسة.
           </p>
 
           <div className="mt-6 rounded-xl bg-slate-50 p-5">
