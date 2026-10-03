@@ -1,17 +1,18 @@
 import Link from 'next/link';
 import { PublicFooter, PublicHeader } from '@/components/public-header';
-import { db } from '@/lib/supabase';
+import { getPublishedSites } from '@/lib/public-sites';
 import type { AvailableSiteRow } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AvailableSitesPage() {
-  const { data, error } = await db()
-    .from('available_sites')
-    .select('*')
-    .eq('is_published', true)
-    .order('created_at', { ascending: false });
-  const sites = (data ?? []) as AvailableSiteRow[];
+  let sites: AvailableSiteRow[] = [];
+  let loadFailed = false;
+  try {
+    sites = await getPublishedSites();
+  } catch {
+    loadFailed = true;
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -30,7 +31,7 @@ export default async function AvailableSitesPage() {
           </p>
         </div>
 
-        {error ? (
+        {loadFailed ? (
           <div className="card mt-8 border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
             تعذّر تحميل المواقع حالياً. يرجى المحاولة لاحقاً.
           </div>
