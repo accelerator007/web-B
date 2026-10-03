@@ -1,7 +1,8 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 import { requireAdmin } from '@/lib/auth';
+import { PUBLIC_SITES_CACHE_TAG } from '@/lib/public-sites';
 import { db } from '@/lib/supabase';
 import { logAudit } from '@/lib/notify';
 
@@ -36,6 +37,7 @@ export async function createAvailableSiteAction(formData: FormData) {
   }).select('id').single();
   if (error || !data) throw new Error(`تعذّر إضافة الموقع: ${error?.message ?? ''}`);
   await logAudit({ actorId: admin.id, actorName: admin.full_name, action: 'available_site_created', targetType: 'available_site', targetId: data.id });
+  updateTag(PUBLIC_SITES_CACHE_TAG);
   revalidatePath('/sites');
   revalidatePath('/admin/sites');
 }
@@ -47,6 +49,7 @@ export async function toggleAvailableSiteAction(formData: FormData) {
   const { error } = await db().from('available_sites').update({ is_published: publish }).eq('id', id);
   if (error) throw new Error(`تعذّر تحديث الموقع: ${error.message}`);
   await logAudit({ actorId: admin.id, actorName: admin.full_name, action: publish ? 'available_site_published' : 'available_site_hidden', targetType: 'available_site', targetId: id });
+  updateTag(PUBLIC_SITES_CACHE_TAG);
   revalidatePath('/sites');
   revalidatePath('/admin/sites');
 }
@@ -57,6 +60,7 @@ export async function deleteAvailableSiteAction(formData: FormData) {
   const { error } = await db().from('available_sites').delete().eq('id', id);
   if (error) throw new Error(`تعذّر حذف الموقع: ${error.message}`);
   await logAudit({ actorId: admin.id, actorName: admin.full_name, action: 'available_site_deleted', targetType: 'available_site', targetId: id });
+  updateTag(PUBLIC_SITES_CACHE_TAG);
   revalidatePath('/sites');
   revalidatePath('/admin/sites');
 }
