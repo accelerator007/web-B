@@ -167,6 +167,10 @@ function auditLabel(action: string) {
     decision_rejected: 'رفض طلب',
     attachment_opened: 'فتح مرفق',
     attachment_downloaded: 'تنزيل مرفق',
+    available_site_created: 'إضافة موقع معروض للاستغلال',
+    available_site_published: 'نشر موقع معروض للاستغلال',
+    available_site_hidden: 'إخفاء موقع معروض للاستغلال',
+    available_site_deleted: 'حذف موقع معروض للاستغلال',
   };
   return map[action] ?? action;
 }

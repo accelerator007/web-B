@@ -21,6 +21,7 @@ export type RequestRow = {
   civil_number: string;
   full_name: string;
   phone: string;
+  activity_type: string | null;
   site_location_url: string | null;
   site_latitude: number | null;
   site_longitude: number | null;
@@ -92,6 +93,19 @@ export type NotificationRow = {
   body: string | null;
   is_read: boolean;
   created_at: string;
+};
+
+export type AvailableSiteRow = {
+  id: string;
+  title: string;
+  activity_type: string | null;
+  description: string | null;
+  location_url: string;
+  latitude: number | null;
+  longitude: number | null;
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
 export type ActionState = { ok?: boolean; error?: string; message?: string } | null;

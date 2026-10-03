@@ -26,6 +26,7 @@ export function RequestHeader({ r }: { r: RequestRow }) {
         <Field label="اسم مقدّم الطلب" value={r.full_name} />
         <Field label="الرقم المدني" value={r.civil_number} ltr />
         <Field label="رقم الهاتف" value={r.phone} ltr />
+        {r.activity_type && <Field label="نوع النشاط" value={r.activity_type} />}
         <Field
           label="حالة الدفع"
           value={

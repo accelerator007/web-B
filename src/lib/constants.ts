@@ -17,14 +17,14 @@ export const DEPARTMENTS: Record<Department, string> = {
 };
 
 export const REQUEST_TYPES: Record<RequestType, string> = {
-  new: 'طلب استثمار موقع جديد',
-  renewal: 'تجديد عقد استثمار سابق',
-  waiver: 'تنازل عن موقع استثماري',
-  cancellation: 'إلغاء عقد استثماري',
+  new: 'طلب إيجار موقع جديد',
+  renewal: 'تجديد عقد إيجار سابق',
+  waiver: 'تنازل عن موقع مؤجر',
+  cancellation: 'إلغاء عقد إيجار',
 };
 
 export const REQUEST_TYPE_SHORT: Record<RequestType, string> = {
-  new: 'استثمار جديد',
+  new: 'إيجار جديد',
   renewal: 'تجديد عقد',
   waiver: 'تنازل',
   cancellation: 'إلغاء عقد',
@@ -68,6 +68,7 @@ export const ATTACHMENTS: Record<RequestType, AttachmentField[]> = {
   ],
   waiver: [
     { key: 'waiver_letter', label: 'رسالة التنازل', hint: 'ملف PDF أو صورة', required: true },
+    { key: 'license', label: 'الترخيص', hint: 'نسخة من الترخيص بصيغة PDF أو صورة', required: true },
     { key: 'site_photo_after', label: 'صورة الموقع بعد الإخلاء', hint: 'صورة أو ملف PDF', required: true },
     { key: 'clearance', label: 'المخالصة المالية', hint: 'ملف PDF أو صورة', required: true },
   ],

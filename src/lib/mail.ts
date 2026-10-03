@@ -51,7 +51,7 @@ export function emailTemplate(title: string, lines: string[], cta?: { label: str
     <div style="max-width:560px;margin:auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #e5e7eb">
       <div style="background:#1e553b;color:#fff;padding:18px 22px">
         <div style="font-size:17px;font-weight:bold">دائرة البلدية بالسويق</div>
-        <div style="font-size:12px;opacity:.85">بوابة استثمار المواقع الحكومية</div>
+        <div style="font-size:12px;opacity:.85">بوابة استثمار أو إيجار المواقع الحكومية</div>
       </div>
       <div style="padding:22px;color:#111827">
         <h2 style="margin:0 0 12px;font-size:18px">${title}</h2>
@@ -63,7 +63,7 @@ export function emailTemplate(title: string, lines: string[], cta?: { label: str
         }
       </div>
       <div style="padding:14px 22px;background:#f9fafb;color:#6b7280;font-size:11px;border-top:1px solid #e5e7eb">
-        هذه رسالة آلية من نظام بوابة الاستثمار، الرجاء عدم الرد عليها.
+        هذه رسالة آلية من نظام بوابة الاستثمار أو الإيجار، الرجاء عدم الرد عليها.
       </div>
     </div>
   </div>`;
