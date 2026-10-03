@@ -4,35 +4,38 @@ import { db } from '@/lib/supabase';
 import { RequestsTable } from '@/components/requests-table';
 import { formatDate } from '@/components/ui';
 import { DEPARTMENTS, REQUEST_TYPES, type RequestType } from '@/lib/constants';
+import { countRequests } from '@/lib/queries';
 import type { RequestRow } from '@/lib/types';
 
 export default async function AdminHome() {
   await requireAdmin();
   const supa = db();
 
-  // Four parallel requests replace the previous two waves of 13 Supabase requests.
-  const [{ data: requestStats }, { data: employeeStats }, { data: latest }, { data: audit }] = await Promise.all([
-    supa.from('requests').select('status,type'),
-    supa.from('employees').select('status'),
+  const countEmployees = async (status: 'active' | 'pending') => {
+    const { count, error } = await supa
+      .from('employees')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', status);
+    if (error) throw error;
+    return count ?? 0;
+  };
+  const statuses = ['pending_departments', 'pending_finance', 'pending_investment', 'pending_payment', 'approved', 'rejected'] as const;
+  const types: RequestType[] = ['new', 'renewal', 'waiver', 'cancellation'];
+  const [total, statusCounts, typeCounts, employeesCount, pendingAccounts, latestResult, auditResult] = await Promise.all([
+    countRequests(),
+    Promise.all(statuses.map((status) => countRequests({ status }))),
+    Promise.all(types.map((type) => countRequests({ type }))),
+    countEmployees('active'),
+    countEmployees('pending'),
     supa.from('requests').select('*').order('created_at', { ascending: false }).limit(10),
     supa.from('audit_log').select('id,action,actor_name,created_at').order('created_at', { ascending: false }).limit(8),
   ]);
-
-  const requests = requestStats ?? [];
-  const employees = employeeStats ?? [];
-  const total = requests.length;
-  const pendingDepartments = requests.filter((request) => request.status === 'pending_departments').length;
-  const pendingFinance = requests.filter((request) => request.status === 'pending_finance').length;
-  const pendingInvestment = requests.filter((request) => request.status === 'pending_investment').length;
-  const pendingPayment = requests.filter((request) => request.status === 'pending_payment').length;
-  const approved = requests.filter((request) => request.status === 'approved').length;
-  const rejected = requests.filter((request) => request.status === 'rejected').length;
-  const typeNew = requests.filter((request) => request.type === 'new').length;
-  const typeRenewal = requests.filter((request) => request.type === 'renewal').length;
-  const typeWaiver = requests.filter((request) => request.type === 'waiver').length;
-  const typeCancellation = requests.filter((request) => request.type === 'cancellation').length;
-  const employeesCount = employees.filter((employee) => employee.status === 'active').length;
-  const pendingAccounts = employees.filter((employee) => employee.status === 'pending').length;
+  if (latestResult.error) throw latestResult.error;
+  if (auditResult.error) throw auditResult.error;
+  const latest = latestResult.data;
+  const audit = auditResult.data;
+  const [pendingDepartments, pendingFinance, pendingInvestment, pendingPayment, approved, rejected] = statusCounts;
+  const [typeNew, typeRenewal, typeWaiver, typeCancellation] = typeCounts;
 
   const byType: { type: RequestType; value: number }[] = [
     { type: 'new', value: typeNew },
@@ -167,6 +170,10 @@ function auditLabel(action: string) {
     decision_rejected: 'رفض طلب',
     attachment_opened: 'فتح مرفق',
     attachment_downloaded: 'تنزيل مرفق',
+    available_site_created: 'إضافة موقع معروض للاستغلال',
+    available_site_published: 'نشر موقع معروض للاستغلال',
+    available_site_hidden: 'إخفاء موقع معروض للاستغلال',
+    available_site_deleted: 'حذف موقع معروض للاستغلال',
   };
   return map[action] ?? action;
 }

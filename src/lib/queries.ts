@@ -1,7 +1,7 @@
 import 'server-only';
 import { db } from './supabase';
 import { inboxFilter } from './workflow';
-import type { Department } from './constants';
+import type { Department, RequestStatus, RequestType } from './constants';
 import type { RequestRow } from './types';
 
 export type SearchParams = {
@@ -10,6 +10,53 @@ export type SearchParams = {
   type?: string;
   scope?: string;
 };
+
+const REPORT_PAGE_SIZE = 1000;
+
+function applyDepartmentVisibility<T>(query: T, department?: Department): T {
+  if (department === 'finance') {
+    return (query as T & { or: (filter: string) => T }).or(
+      'finance_at.not.is.null,status.in.(pending_finance,pending_investment,pending_payment,approved)'
+    );
+  }
+  if (department === 'investment') {
+    return (query as T & { or: (filter: string) => T }).or(
+      'investment_at.not.is.null,status.in.(pending_investment,approved)'
+    );
+  }
+  return query;
+}
+
+/** عدّ دقيق من قاعدة البيانات، دون التأثر بحد Supabase الافتراضي للصفوف. */
+export async function countRequests(filters: {
+  status?: RequestStatus;
+  type?: RequestType;
+  department?: Department;
+} = {}) {
+  let query = db().from('requests').select('id', { count: 'exact', head: true });
+  if (filters.status) query = query.eq('status', filters.status);
+  if (filters.type) query = query.eq('type', filters.type);
+  query = applyDepartmentVisibility(query, filters.department);
+  const { count, error } = await query;
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/** يجلب كل صفوف التقرير على دفعات صريحة. */
+export async function fetchAllRequestsForReport(columns = '*'): Promise<RequestRow[]> {
+  const rows: RequestRow[] = [];
+  for (let from = 0; ; from += REPORT_PAGE_SIZE) {
+    const { data, error } = await db()
+      .from('requests')
+      .select(columns)
+      .order('created_at', { ascending: false })
+      .range(from, from + REPORT_PAGE_SIZE - 1);
+    if (error) throw error;
+    const page = (data ?? []) as unknown as RequestRow[];
+    rows.push(...page);
+    if (page.length < REPORT_PAGE_SIZE) return rows;
+  }
+}
 
 /** بحث موحّد في الطلبات — يُستخدم في صفحات الموظفين والأدمن */
 export async function searchRequests(
@@ -40,13 +87,10 @@ export async function searchRequests(
   }
 
   // الدوائر اللاحقة لا ترى الطلب قبل وصوله الفعلي إلى مرحلتها.
-  if (opts.department === 'finance') {
-    q = q.or('finance_at.not.is.null,status.in.(pending_finance,pending_investment,pending_payment,approved)');
-  } else if (opts.department === 'investment') {
-    q = q.or('investment_at.not.is.null,status.in.(pending_investment,approved)');
-  }
+  q = applyDepartmentVisibility(q, opts.department);
 
-  const { data } = await q;
+  const { data, error } = await q;
+  if (error) throw error;
   return (data ?? []) as RequestRow[];
 }
 

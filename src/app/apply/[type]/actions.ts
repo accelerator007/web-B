@@ -64,9 +64,12 @@ async function submitRequestImpl(
   const civil = String(formData.get('civil_number') ?? '').trim();
   const name = String(formData.get('full_name') ?? '').trim().replace(/\s+/g, ' ');
   const phoneRaw = String(formData.get('phone') ?? '');
+  const activityType = String(formData.get('activity_type') ?? '').trim().replace(/\s+/g, ' ');
   const locationUrl = String(formData.get('site_location_url') ?? '').trim();
-  const latitude = Number(formData.get('site_latitude'));
-  const longitude = Number(formData.get('site_longitude'));
+  const latitudeRaw = String(formData.get('site_latitude') ?? '').trim();
+  const longitudeRaw = String(formData.get('site_longitude') ?? '').trim();
+  const latitude = latitudeRaw ? Number(latitudeRaw) : null;
+  const longitude = longitudeRaw ? Number(longitudeRaw) : null;
   const notes = String(formData.get('citizen_notes') ?? '').trim();
 
   const fields = ATTACHMENTS[type];
@@ -78,6 +81,9 @@ async function submitRequestImpl(
     validatePhone(phoneRaw),
   ].filter(Boolean) as string[];
   if (errors.length) return { error: errors[0] };
+  if (type === 'new' && (activityType.length < 2 || activityType.length > 120)) {
+    return { error: 'الرجاء كتابة نوع النشاط بشكل واضح' };
+  }
   try {
     const parsed = new URL(locationUrl);
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') throw new Error();
@@ -118,9 +124,10 @@ async function submitRequestImpl(
       civil_number: civil,
       full_name: name,
       phone: normalizePhone(phoneRaw),
+      activity_type: type === 'new' ? activityType : null,
       site_location_url: locationUrl,
-      site_latitude: Number.isFinite(latitude) && latitude >= -90 && latitude <= 90 ? latitude : null,
-      site_longitude: Number.isFinite(longitude) && longitude >= -180 && longitude <= 180 ? longitude : null,
+      site_latitude: latitude != null && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90 ? latitude : null,
+      site_longitude: longitude != null && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180 ? longitude : null,
       citizen_notes: notes || null,
       status: 'pending_departments',
     })

@@ -12,7 +12,7 @@ export async function GET() {
     NEXT_PUBLIC_SUPABASE_URL: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
     SUPABASE_SERVICE_ROLE_KEY: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
-    SESSION_SECRET: (process.env.SESSION_SECRET ?? '').length >= 16,
+    SESSION_SECRET: (process.env.SESSION_SECRET ?? '').length >= 32,
     RESEND_API_KEY: Boolean(process.env.RESEND_API_KEY),
     NEXT_PUBLIC_APP_URL: Boolean(process.env.NEXT_PUBLIC_APP_URL),
   };
@@ -42,6 +42,7 @@ export async function GET() {
   }
 
   const ready = missing.length === 0 && database === 'متصل ✓' && admins > 0;
+  const databaseConnected = database === 'متصل ✓';
 
   return NextResponse.json(
     {
@@ -50,8 +51,10 @@ export async function GET() {
         ? 'النظام جاهز للاستخدام'
         : missing.length
         ? 'متغيّرات بيئة ناقصة في إعدادات الاستضافة'
+        : !databaseConnected
+        ? 'تعذّر الاتصال بقاعدة البيانات — راجع حالة مشروع Supabase وإعدادات الاتصال'
         : admins === 0
-        ? 'قاعدة البيانات متصلة لكن لا يوجد حساب مدير نظام — شغّل supabase/create-admin.sql'
+        ? 'قاعدة البيانات متصلة لكن لا يوجد حساب مدير نظام — شغّل npm run seed:admin'
         : 'راجع تفاصيل قاعدة البيانات أدناه',
       المتغيّرات_الناقصة: missing,
       قاعدة_البيانات: database,

@@ -16,7 +16,7 @@ export function Logo({ compact = false }: { compact?: boolean }) {
       <span className="leading-tight">
         <span className="block text-[15px] font-extrabold text-slate-900">دائرة البلدية بالسويق</span>
         {!compact && (
-          <span className="block text-xs text-slate-500">بوابة استثمار المواقع الحكومية</span>
+          <span className="block text-xs text-slate-500">بوابة استثمار أو إيجار المواقع الحكومية</span>
         )}
       </span>
     </Link>

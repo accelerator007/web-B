@@ -96,6 +96,22 @@ export function ApplyForm({
             />
           </div>
 
+          {type === 'new' && (
+            <div className="sm:col-span-2">
+              <label className="label" htmlFor="activity_type">
+                نوع النشاط <span className="text-rose-600">*</span>
+              </label>
+              <input
+                id="activity_type"
+                name="activity_type"
+                className="input"
+                placeholder="مثال: تجاري، خدمي، سياحي"
+                maxLength={120}
+                required
+              />
+            </div>
+          )}
+
           <div className="sm:col-span-2">
             <label className="label" htmlFor="site_location_url">
               رابط موقع المكان <span className="text-rose-600">*</span>

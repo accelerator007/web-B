@@ -67,6 +67,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 <NavLink href="/admin">لوحة الإدارة</NavLink>
                 <NavLink href="/admin/requests">إدارة الطلبات</NavLink>
                 <NavLink href="/admin/reports">التقارير</NavLink>
+                <NavLink href="/admin/sites">المواقع المعروضة</NavLink>
                 <NavLink href="/admin/employees">الموظفون</NavLink>
                 <NavLink href="/admin/employees/requests">طلبات الحسابات</NavLink>
               </>

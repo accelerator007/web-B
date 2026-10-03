@@ -8,7 +8,7 @@ const SERVICES = [
     icon: (
       <path d="M12 5v14M5 12h14" strokeLinecap="round" />
     ),
-    desc: 'تقديم طلب جديد لاستثمار موقع حكومي تابع لدائرة البلدية بالسويق.',
+    desc: 'تقديم طلب جديد لإيجار موقع حكومي تابع لدائرة البلدية بالسويق.',
     color: 'bg-brand-600',
   },
   {
@@ -16,7 +16,7 @@ const SERVICES = [
     icon: (
       <path d="M4 12a8 8 0 0 1 13.7-5.7L20 8M20 4v4h-4M20 12a8 8 0 0 1-13.7 5.7L4 16m0 4v-4h4" strokeLinecap="round" strokeLinejoin="round" />
     ),
-    desc: 'تجديد عقد استثمار قائم قبل انتهاء مدته مع إرفاق العقد السابق.',
+    desc: 'تجديد عقد إيجار قائم قبل انتهاء مدته مع إرفاق العقد السابق.',
     color: 'bg-sky-700',
   },
   {
@@ -24,7 +24,7 @@ const SERVICES = [
     icon: (
       <path d="M8 7h8M8 12h5M4 5.5A2.5 2.5 0 0 1 6.5 3H15l5 5v10.5A2.5 2.5 0 0 1 17.5 21h-11A2.5 2.5 0 0 1 4 18.5z" strokeLinecap="round" strokeLinejoin="round" />
     ),
-    desc: 'التنازل عن موقع استثماري بعد إخلائه وتقديم المخالصة المالية.',
+    desc: 'التنازل عن موقع مؤجر بعد إخلائه وتقديم الترخيص والمخالصة المالية.',
     color: 'bg-gold-600',
   },
   {
@@ -35,7 +35,7 @@ const SERVICES = [
         <path d="m10 15 4 4m0-4-4 4" strokeLinecap="round" />
       </>
     ),
-    desc: 'إلغاء عقد استثماري قائم بعد إخلاء الموقع وتقديم المخالصة المالية.',
+    desc: 'إلغاء عقد إيجار قائم بعد إخلاء الموقع وتقديم المخالصة المالية.',
     color: 'bg-rose-700',
   },
 ];
@@ -56,7 +56,7 @@ export default function HomePage() {
           <div className="relative mx-auto max-w-6xl px-4 py-16 sm:py-20">
             <span className="badge bg-white/15 text-white ring-white/25">خدمات إلكترونية</span>
             <h1 className="mt-4 text-3xl font-extrabold leading-snug sm:text-4xl">
-              بوابة استثمار المواقع الحكومية
+              بوابة استثمار أو إيجار المواقع الحكومية
             </h1>
             <p className="mt-3 max-w-2xl text-[15px] leading-8 text-white/85">
               قدّم طلبك إلكترونياً وتابع مساره خطوة بخطوة بين قسم الشؤون الفنية، وقسم الرقابة الغذائية
@@ -113,6 +113,26 @@ export default function HomePage() {
                 </span>
               </Link>
             ))}
+            <Link
+              href="/sites"
+              className="card group flex flex-col border-brand-200 bg-brand-50/30 p-5 transition-[transform,border-color,box-shadow] duration-150 hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-lg sm:p-6 lg:col-span-4"
+            >
+              <span className="grid h-12 w-12 place-items-center rounded-xl bg-brand-700 text-white">
+                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M9 18 3.5 21V6L9 3l6 3 5.5-3v15L15 21l-6-3Z M9 3v15M15 6v15" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <h3 className="mt-4 text-[17px] font-bold text-slate-900">المواقع المعروضة للاستغلال</h3>
+              <p className="mt-2 text-sm leading-7 text-slate-600">
+                استعرض المواقع الحكومية المتاحة للإيجار وافتح موقع كل فرصة مباشرة على الخريطة.
+              </p>
+              <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-brand-700">
+                عرض الخريطة والمواقع
+                <svg viewBox="0 0 24 24" className="h-4 w-4 transition-transform duration-150 group-hover:-translate-x-1" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M19 12H5M11 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+            </Link>
           </div>
         </section>
 

@@ -13,6 +13,9 @@ export function PublicHeader() {
           <Link href="/track" className="rounded-lg px-3 py-2 hover:bg-slate-100">
             تتبّع طلب
           </Link>
+          <Link href="/sites" className="hidden rounded-lg px-3 py-2 hover:bg-slate-100 sm:block">
+            المواقع المعروضة
+          </Link>
           <Link href="/login" className="btn-primary !px-4 !py-2 !text-sm">
             دخول الموظفين
           </Link>
@@ -28,7 +31,7 @@ export function PublicFooter() {
       <div className="mx-auto max-w-6xl px-4 py-8 text-sm text-slate-500">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span>© {new Date().getFullYear()} دائرة البلدية بالسويق — جميع الحقوق محفوظة</span>
-          <span>بوابة استثمار المواقع الحكومية</span>
+          <span>بوابة استثمار أو إيجار المواقع الحكومية</span>
         </div>
       </div>
     </footer>

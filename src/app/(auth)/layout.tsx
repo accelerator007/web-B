@@ -18,7 +18,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </main>
 
       <footer className="py-6 text-center text-xs text-slate-500">
-        دائرة البلدية بالسويق — بوابة استثمار المواقع الحكومية
+        دائرة البلدية بالسويق — بوابة استثمار أو إيجار المواقع الحكومية
       </footer>
     </div>
   );

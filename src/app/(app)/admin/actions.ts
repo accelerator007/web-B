@@ -42,7 +42,7 @@ async function decideAccountActionImpl(_prev: ActionState, formData: FormData): 
       employeeId: id,
       email: emp.email,
       title: 'تم اعتماد حسابك',
-      body: `تم اعتماد حسابك في بوابة استثمار المواقع الحكومية — ${DEPARTMENTS[emp.department as Department]}. يمكنك الآن تسجيل الدخول برقمك الوظيفي.`,
+      body: `تم اعتماد حسابك في بوابة استثمار أو إيجار المواقع الحكومية — ${DEPARTMENTS[emp.department as Department]}. يمكنك الآن تسجيل الدخول برقمك الوظيفي.`,
       link: '/login',
     });
   } else if (decision === 'reject') {
@@ -129,7 +129,7 @@ async function createEmployeeActionImpl(_prev: ActionState, formData: FormData):
     employeeId: created.id,
     email,
     title: 'تم إنشاء حسابك',
-    body: `تم إنشاء حساب لك في بوابة استثمار المواقع الحكومية — الرقم الوظيفي ${employeeNumber}. يمكنك تسجيل الدخول وتغيير كلمة المرور من خيار "نسيت كلمة المرور".`,
+    body: `تم إنشاء حساب لك في بوابة استثمار أو إيجار المواقع الحكومية — الرقم الوظيفي ${employeeNumber}. يمكنك تسجيل الدخول وتغيير كلمة المرور من خيار "نسيت كلمة المرور".`,
     link: '/login',
   });
 
@@ -223,10 +223,10 @@ async function changeEmployeePasswordActionImpl(
   const { data: emp } = await db().from('employees').select('email').eq('id', id).maybeSingle();
   if (!emp) return { error: 'الموظف غير موجود' };
 
-  const { error: updateError } = await db()
-    .from('employees')
-    .update({ password_hash: await hashPassword(password) })
-    .eq('id', id);
+  const { error: updateError } = await db().rpc('set_employee_password', {
+    p_employee_id: id,
+    p_password_hash: await hashPassword(password),
+  });
   if (updateError) return { error: `تعذّر تغيير كلمة المرور: ${updateError.message}` };
 
   await notifyEmployee({

@@ -105,6 +105,7 @@ function CitizenRequestCard({ r }: { r: RequestRow }) {
             {r.request_number}
           </div>
           <div className="mt-1 text-sm text-slate-600">{REQUEST_TYPES[r.type]}</div>
+          {r.activity_type && <div className="mt-1 text-xs font-semibold text-brand-700">نوع النشاط: {r.activity_type}</div>}
           <div className="mt-1 text-xs text-slate-400">قُدّم في {formatDate(r.created_at)}</div>
         </div>
         <StatusBadge status={r.status} />

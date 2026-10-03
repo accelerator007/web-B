@@ -50,6 +50,7 @@ async function loginActionImpl(_prev: ActionState, formData: FormData): Promise<
     email: emp.email,
     department: emp.department as Department,
     role: emp.role,
+    session_version: emp.session_version,
   });
 
   await db().from('employees').update({ last_login_at: new Date().toISOString() }).eq('id', emp.id);
@@ -228,10 +229,10 @@ async function resetPasswordActionImpl(_prev: ActionState, formData: FormData): 
     .maybeSingle();
   if (usedError || !consumed) return { error: 'تم استخدام رمز التحقق مسبقاً، اطلب رمزاً جديداً' };
 
-  const { error: passwordError } = await supa
-    .from('employees')
-    .update({ password_hash: await hashPassword(password) })
-    .eq('id', emp.id);
+  const { error: passwordError } = await supa.rpc('set_employee_password', {
+    p_employee_id: emp.id,
+    p_password_hash: await hashPassword(password),
+  });
   if (passwordError) return { error: 'تعذّر تغيير كلمة المرور. اطلب رمزاً جديداً وحاول مرة أخرى' };
 
   await notifyEmployee({

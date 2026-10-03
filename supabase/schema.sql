@@ -1,5 +1,5 @@
 -- ==========================================================================
---  بوابة استثمار المواقع الحكومية — دائرة البلدية بالسويق
+--  بوابة استثمار أو إيجار المواقع الحكومية — دائرة البلدية بالسويق
 --  مخطط قاعدة البيانات (Supabase / PostgreSQL)
 --  شغّل هذا الملف كاملاً في: Supabase Dashboard > SQL Editor > New query
 -- ==========================================================================
@@ -24,14 +24,45 @@ create table if not exists public.employees (
   updated_at      timestamptz not null default now(),
   approved_at     timestamptz,
   approved_by     uuid references public.employees(id) on delete set null,
-  last_login_at   timestamptz
+  last_login_at   timestamptz,
+  session_version integer not null default 1 check (session_version > 0)
 );
 
 create index if not exists employees_department_idx on public.employees(department);
 create index if not exists employees_status_idx     on public.employees(status);
 
+-- تغيير كلمة المرور وزيادة إصدار الجلسة في معاملة واحدة.
+create or replace function public.set_employee_password(
+  p_employee_id uuid,
+  p_password_hash text
+)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  next_version integer;
+begin
+  update public.employees
+  set password_hash = p_password_hash,
+      session_version = session_version + 1,
+      updated_at = now()
+  where id = p_employee_id
+  returning session_version into next_version;
+
+  if next_version is null then
+    raise exception 'employee not found';
+  end if;
+  return next_version;
+end;
+$$;
+
+revoke all on function public.set_employee_password(uuid, text) from public, anon, authenticated;
+grant execute on function public.set_employee_password(uuid, text) to service_role;
+
 -- ---------------------------------------------------------------- الطلبات
--- type:   new (استثمار جديد) | renewal (تجديد عقد) | waiver (تنازل) | cancellation (إلغاء عقد)
+-- type:   new (إيجار جديد) | renewal (تجديد عقد) | waiver (تنازل) | cancellation (إلغاء عقد)
 -- status: pending_departments | pending_finance | pending_investment | pending_payment | approved | rejected
 create table if not exists public.requests (
   id                uuid primary key default gen_random_uuid(),
@@ -42,6 +73,7 @@ create table if not exists public.requests (
   civil_number      text not null,
   full_name         text not null,
   phone             text not null,
+  activity_type     text,
   site_location_url text not null,
   site_latitude     double precision,
   site_longitude    double precision,
@@ -98,6 +130,7 @@ create index if not exists requests_created_idx on public.requests(created_at de
 alter table public.requests add column if not exists site_location_url text;
 alter table public.requests add column if not exists site_latitude double precision;
 alter table public.requests add column if not exists site_longitude double precision;
+alter table public.requests add column if not exists activity_type text;
 
 -- ---------------------------------------------------------------- المرفقات
 create table if not exists public.attachments (
@@ -211,6 +244,26 @@ alter table public.reviews        enable row level security;
 alter table public.notifications  enable row level security;
 alter table public.otp_codes      enable row level security;
 alter table public.audit_log      enable row level security;
+
+-- المواقع التي تعرضها الدائرة للمواطنين للاستغلال/الإيجار.
+create table if not exists public.available_sites (
+  id            uuid primary key default gen_random_uuid(),
+  title         text not null,
+  activity_type text,
+  description   text,
+  location_url  text not null,
+  latitude      double precision,
+  longitude     double precision,
+  is_published  boolean not null default true,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
+);
+create index if not exists available_sites_published_idx
+  on public.available_sites(is_published, created_at desc);
+drop trigger if exists available_sites_touch on public.available_sites;
+create trigger available_sites_touch before update on public.available_sites
+  for each row execute function public.touch_updated_at();
+alter table public.available_sites enable row level security;
 
 -- ------------------------------------------------------ تحديد معدل الطلبات
 -- يُستخدم من إجراءات الخادم لمنع الإغراق ومحاولات الدخول المتكررة.
