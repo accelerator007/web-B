@@ -22,8 +22,8 @@ export default async function DashboardPage() {
 
   const stats = [
     { label: 'قيد دراسة الأقسام', value: counts[0], tone: 'text-amber-700 bg-amber-50' },
-    { label: 'قيد دراسة المالية', value: counts[1], tone: 'text-sky-700 bg-sky-50' },
-    { label: 'لدى دائرة الاستثمار', value: counts[2], tone: 'text-indigo-700 bg-indigo-50' },
+    { label: 'قيد دراسة الشؤون الإدارية والمالية', value: counts[1], tone: 'text-sky-700 bg-sky-50' },
+    { label: 'لدى قسم الاستثمار وتنمية الإيرادات', value: counts[2], tone: 'text-indigo-700 bg-indigo-50' },
     { label: 'بانتظار الدفع', value: counts[3], tone: 'text-orange-700 bg-orange-50' },
     { label: 'معتمدة', value: counts[4], tone: 'text-emerald-700 bg-emerald-50' },
     { label: 'مرفوضة', value: counts[5], tone: 'text-rose-700 bg-rose-50' },

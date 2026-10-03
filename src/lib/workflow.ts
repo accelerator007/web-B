@@ -88,8 +88,8 @@ type DecisionInput = {
 
 /**
  * تطبيق قرار قسم على الطلب وتحريكه إلى المرحلة التالية.
- * المسار: (الفنية + الرقابة الصحية) ← المالية للدراسة ← دائرة الاستثمار
- * ← المالية للدفع ← الاعتماد النهائي.
+ * المسار: (الرقابة والتراخيص الصحية + الغذائية) ← الشؤون الإدارية والمالية ← الاستثمار وتنمية الإيرادات
+ * ← الشؤون الإدارية والمالية للدفع ← الاعتماد النهائي.
  */
 export async function applyDecision(input: DecisionInput): Promise<{ error?: string; ok?: boolean }> {
   const { request: r, user, actingAs, decision, notes } = input;
@@ -125,7 +125,7 @@ export async function applyDecision(input: DecisionInput): Promise<{ error?: str
     }
   } else if (actingAs === 'finance') {
     if (r.status !== 'pending_finance' && r.status !== 'pending_payment')
-      return { error: 'الطلب ليس في مرحلة الشؤون المالية' };
+      return { error: 'الطلب ليس في مرحلة قسم الشؤون الإدارية والمالية' };
 
     patch.finance_notes = notes || null;
     patch.finance_by_name = user.full_name;
@@ -135,17 +135,17 @@ export async function applyDecision(input: DecisionInput): Promise<{ error?: str
     if (decision === 'rejected') {
       Object.assign(patch, rejectPatch());
     } else if (r.status === 'pending_finance') {
-      // المرحلة الأولى للمالية هي دراسة الطلب فقط، قبل عرضه على دائرة الاستثمار.
+      // المرحلة الأولى للشؤون الإدارية والمالية هي دراسة الطلب قبل عرضه على قسم الاستثمار وتنمية الإيرادات.
       patch.status = 'pending_investment';
     } else {
-      // بعد موافقة الاستثمار يعود الطلب للمالية لاستكمال الدفع.
+      // بعد موافقة الاستثمار يعود الطلب للشؤون الإدارية والمالية لاستكمال الدفع.
       patch.payment_status = input.payment?.status ?? 'unpaid';
       patch.payment_amount = input.payment?.amount ?? null;
       patch.payment_reference = input.payment?.reference ?? null;
       if (patch.payment_status === 'paid' || patch.payment_status === 'exempt') patch.status = 'approved';
     }
   } else if (actingAs === 'investment') {
-    if (r.status !== 'pending_investment') return { error: 'الطلب ليس في مرحلة دائرة الاستثمار' };
+    if (r.status !== 'pending_investment') return { error: 'الطلب ليس في مرحلة قسم الاستثمار وتنمية الإيرادات' };
 
     patch.investment_notes = notes || null;
     patch.investment_by_name = user.full_name;
@@ -166,7 +166,7 @@ export async function applyDecision(input: DecisionInput): Promise<{ error?: str
   if (!updated) return { error: 'تم تحديث الطلب من موظف آخر. حدّث الصفحة لمشاهدة الحالة الحالية.' };
 
   // إذا وافق القسمان في اللحظة نفسها فقد يقرأ كل منهما موافقة الآخر قبل حفظها.
-  // إعادة الفحص مع تحديث شرطي تضمن انتقال الطلب مرة واحدة فقط إلى المالية.
+  // إعادة الفحص مع تحديث شرطي تضمن انتقال الطلب مرة واحدة فقط إلى الشؤون الإدارية والمالية.
   let nextStatus = patch.status ?? r.status;
   let ownsTransition = Boolean(patch.status);
   if ((actingAs === 'technical' || actingAs === 'health') && decision === 'approved' && !patch.status) {
@@ -216,22 +216,22 @@ export async function applyDecision(input: DecisionInput): Promise<{ error?: str
   if (nextStatus === 'pending_finance' && ownsTransition) {
     await notifyDepartment({
       department: 'finance',
-      title: 'طلب محوّل إلى الشؤون المالية للدراسة',
-      body: `${summary}: اعتمدته الشؤون الفنية والرقابة الغذائية والصحية، وينتظر دراسة الشؤون المالية.`,
+      title: 'طلب محوّل إلى الشؤون الإدارية والمالية للدراسة',
+      body: `${summary}: اعتمده قسما الرقابة والتراخيص الصحية والغذائية، وينتظر دراسة الشؤون الإدارية والمالية.`,
       requestId: r.id,
     });
   } else if (nextStatus === 'pending_investment' && ownsTransition) {
     await notifyDepartment({
       department: 'investment',
-      title: 'طلب محوّل إلى دائرة الاستثمار',
-      body: `${summary}: اكتملت دراسة الشؤون المالية، وينتظر موافقة دائرة الاستثمار.`,
+      title: 'طلب محوّل إلى قسم الاستثمار وتنمية الإيرادات',
+      body: `${summary}: اكتملت دراسة الشؤون الإدارية والمالية، وينتظر موافقة قسم الاستثمار وتنمية الإيرادات.`,
       requestId: r.id,
     });
   } else if (nextStatus === 'pending_payment' && ownsTransition) {
     await notifyDepartment({
       department: 'finance',
-      title: 'طلب معتمد من دائرة الاستثمار بانتظار الدفع',
-      body: `${summary}: وافقت دائرة الاستثمار، وأُعيد الطلب للشؤون المالية لاستكمال الدفع.`,
+      title: 'طلب معتمد من قسم الاستثمار وتنمية الإيرادات بانتظار الدفع',
+      body: `${summary}: وافق قسم الاستثمار وتنمية الإيرادات، وأُعيد الطلب إلى الشؤون الإدارية والمالية لاستكمال الدفع.`,
       requestId: r.id,
     });
   } else if (nextStatus === 'rejected' && ownsTransition) {
@@ -245,7 +245,7 @@ export async function applyDecision(input: DecisionInput): Promise<{ error?: str
   } else if (nextStatus === 'approved' && ownsTransition) {
     await notifyAdmins({
       title: 'اعتماد نهائي لطلب',
-      body: `${summary}: تم اعتماده نهائياً من دائرة الاستثمار بواسطة ${user.full_name}.`,
+      body: `${summary}: تم اعتماده نهائياً من قسم الاستثمار وتنمية الإيرادات بواسطة ${user.full_name}.`,
       link: `/admin/requests/${r.id}`,
     });
   }

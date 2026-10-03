@@ -20,8 +20,8 @@ export async function createContractUploadTicketAction(
   const { data } = await db().from('requests').select('*').eq('id', requestId).maybeSingle();
   const request = data as RequestRow | null;
   if (!request || !canDecide(user, request)) return { error: 'لا يمكنك رفع عقد لهذا الطلب' };
-  if (request.status !== 'pending_investment') return { error: 'الطلب ليس في مرحلة دائرة الاستثمار' };
-  if (user.role !== 'admin' && user.department !== 'investment') return { error: 'رفع العقد مخصص لدائرة الاستثمار' };
+  if (request.status !== 'pending_investment') return { error: 'الطلب ليس في مرحلة قسم الاستثمار وتنمية الإيرادات' };
+  if (user.role !== 'admin' && user.department !== 'investment') return { error: 'رفع العقد مخصص لقسم الاستثمار وتنمية الإيرادات' };
   if (input.mimeType !== 'application/pdf') return { error: 'العقد يجب أن يكون بصيغة PDF فقط' };
   if (input.size <= 0 || input.size > MAX_FILE_BYTES) return { error: 'حجم العقد يتجاوز ١٠ ميجابايت' };
 
@@ -74,7 +74,7 @@ async function decideActionImpl(
   if (actingAs === 'investment' && decision === 'approved') {
     contractPath = String(formData.get('contract__path') ?? '').trim();
     contractName = String(formData.get('contract__name') ?? '').trim() || 'العقد المعتمد.pdf';
-    if (!contractPath.startsWith('pending/')) return { error: 'العقد بصيغة PDF مطلوب قبل موافقة دائرة الاستثمار' };
+    if (!contractPath.startsWith('pending/')) return { error: 'العقد بصيغة PDF مطلوب قبل موافقة قسم الاستثمار وتنمية الإيرادات' };
     const contractInfo = await inspectObject(contractPath);
     if (!contractInfo) return { error: 'لم يكتمل رفع العقد، حاول مرة أخرى' };
     if (contractInfo.mime !== 'application/pdf') return { error: 'العقد يجب أن يكون بصيغة PDF فقط' };
@@ -146,9 +146,9 @@ async function decideActionImpl(
 
   let message = decision === 'rejected' ? 'تم تسجيل الرفض.' : 'تم حفظ الموافقة وتحويل الطلب.';
   if (decision === 'approved' && request.status === 'pending_finance')
-    message = 'تمت دراسة الطلب وتحويله إلى دائرة الاستثمار.';
+    message = 'تمت دراسة الطلب وتحويله إلى قسم الاستثمار وتنمية الإيرادات.';
   else if (decision === 'approved' && request.status === 'pending_investment')
-    message = 'تمت موافقة دائرة الاستثمار وإعادة الطلب إلى الشؤون المالية لاستكمال الدفع.';
+    message = 'تمت موافقة قسم الاستثمار وتنمية الإيرادات وإعادة الطلب إلى قسم الشؤون الإدارية والمالية لاستكمال الدفع.';
   else if (decision === 'approved' && request.status === 'pending_payment')
     message = paymentStatus === 'unpaid'
       ? 'تم حفظ حالة عدم الدفع، والمعاملة ما زالت بانتظار الدفع.'
