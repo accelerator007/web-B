@@ -42,6 +42,7 @@ export async function GET() {
   }
 
   const ready = missing.length === 0 && database === 'متصل ✓' && admins > 0;
+  const databaseConnected = database === 'متصل ✓';
 
   return NextResponse.json(
     {
@@ -50,6 +51,8 @@ export async function GET() {
         ? 'النظام جاهز للاستخدام'
         : missing.length
         ? 'متغيّرات بيئة ناقصة في إعدادات الاستضافة'
+        : !databaseConnected
+        ? 'تعذّر الاتصال بقاعدة البيانات — راجع حالة مشروع Supabase وإعدادات الاتصال'
         : admins === 0
         ? 'قاعدة البيانات متصلة لكن لا يوجد حساب مدير نظام — شغّل npm run seed:admin'
         : 'راجع تفاصيل قاعدة البيانات أدناه',
